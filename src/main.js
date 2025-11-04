@@ -1,12 +1,17 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
-import './style.css'
+import './styleSearch.css'
 
 // MVC demo minimal: Model-View-Controller wiring
 import ExampleModel from './models/ExampleModel.js'
 import ExampleView from './views/ExampleView.js'
 import ExampleController from './controllers/ExampleController.js'
+
+// Funcionalidad de búsqueda
+import SearchModel from './models/SearchModel.js'
+import SearchView from './views/SearchView.js'
+import SearchController from './controllers/SearchController.js'
 
 // Punto de entrada: monta la app en #app
 const root = document.getElementById('app')
@@ -15,4 +20,15 @@ if (root) {
 	const view = new ExampleView(root)
 	// eslint-disable-next-line no-unused-vars
 	const controller = new ExampleController(model, view)
+}
+
+// Inicializar búsqueda
+const searchInput = document.querySelector('input[type="search"]')
+const searchButton = document.querySelector('button[type="submit"]')
+
+if (searchInput && searchButton) {
+	const searchModel = new SearchModel()
+	const searchView = new SearchView(searchInput, searchButton)
+	// eslint-disable-next-line no-unused-vars
+	const searchController = new SearchController(searchModel, searchView)
 }
