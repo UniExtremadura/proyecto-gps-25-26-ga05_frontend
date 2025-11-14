@@ -1,11 +1,11 @@
 import EventEmitter from '../core/EventEmitter.js'
 import ApiClient from '../services/ApiClient.js'
 
-export default class ExampleModel extends EventEmitter {
+export default class NoticiaModel extends EventEmitter {
   constructor() {
     super()
     this.state = {
-      noticias: [],
+      noticia: null,
       loading: true,
       error: null
     }
@@ -15,31 +15,27 @@ export default class ExampleModel extends EventEmitter {
     return JSON.parse(JSON.stringify(this.state))
   }
 
-  async cargarNoticias() {
+  async cargarNoticia(id) {
     try {
       this.state = { ...this.state, loading: true, error: null }
       this.emit('change', this.getState())
       
-		const noticias = await ApiClient.getNoticias()
-		const noticiasLimitadas = noticias.slice(0,4)
+      const noticia = await ApiClient.getNoticia(id)
       
-      // Procesar las noticias y obtener nombres de autores
-      const noticiasProcesadas = await Promise.all(
-        noticiasLimitadas.map(async (noticia) => {
-          const nombreAutor = await this.obtenerNombreAutor(noticia.autor)
-          
-          return {
-            ...noticia,
-            fechaFormateada: this.formatearFecha(noticia.fecha),
-            extracto: this.extraerTexto(noticia.contenidoHTML).substring(0, 100) + '...',
-            nombreAutor: nombreAutor
-          }
-        })
-      )
+      if (!noticia) {
+        throw new Error('Noticia no encontrada')
+      }
+
+      // Procesar la noticia
+      const noticiaProcesada = {
+        ...noticia,
+        fechaFormateada: this.formatearFecha(noticia.fecha),
+        nombreAutor: await this.obtenerNombreAutor(noticia.autor)
+      }
       
       this.state = { 
         ...this.state, 
-        noticias: noticiasProcesadas, 
+        noticia: noticiaProcesada, 
         loading: false 
       }
       this.emit('change', this.getState())
@@ -53,30 +49,19 @@ export default class ExampleModel extends EventEmitter {
     }
   }
 
-  // Método para obtener el nombre del autor desde la API de usuarios
+  // Método para obtener el nombre del autor
   async obtenerNombreAutor(idAutor) {
-    // Si el autor es 0, null o undefined, usar un valor por defecto
     if (!idAutor || idAutor === 0) {
       return 'Redactor'
     }
 
     try {
-      // Obtener información del usuario desde la API
       const usuario = await ApiClient.getUsuario(idAutor)
-      return usuario?.nombre
+      return usuario?.nombre || `Usuario ${idAutor}`
     } catch (error) {
       console.warn(`No se pudo obtener el autor ${idAutor}:`, error.message)
       return `Usuario ${idAutor}`
     }
-  }
-
-  // Método para extraer texto plano del HTML
-  extraerTexto(html) {
-    if (!html) return ''
-    const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = html
-    const text = tempDiv.textContent || tempDiv.innerText || ''
-    return text.replace(/\s+/g, ' ').trim()
   }
 
   // Método para formatear fecha

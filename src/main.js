@@ -18,53 +18,165 @@ import SearchModel from './models/SearchModel.js'
 import SearchView from './views/SearchView.js'
 import SearchController from './controllers/SearchController.js'
 
-// Punto de entrada: monta la app en #app
-const root = document.getElementById('app')
-if (root) {
-	const mountExample = () => {
-		root.innerHTML = ''
-		const model = new ExampleModel()
-		const view = new ExampleView(root)
-		// eslint-disable-next-line no-unused-vars
-		const controller = new ExampleController(model, view)
-	}
+//Noticias
+import NoticiaView from './views/NoticiaView.js'
+import AllNewsView from './views/AllNewsView.js'
+import NoticiaModel from './models/NoticiaModel.js'
+import AllNewsModel from './models/AllNewsModel.js'
+import NoticiaController from './controllers/NoticiaController.js'
+import AllNewsController from './controllers/AllNewsController.js'
 
-	const mountRegister = () => {
-		root.innerHTML = ''
-			const model = new RegisterModel()
-			const view = new RegisterView(root)
-			// eslint-disable-next-line no-unused-vars
-			const controller = new RegisterController(view, model)
-	}
-
-		const mountLogin = () => {
-			root.innerHTML = ''
-			const view = new LoginView(root)
-			const controller = new LoginController(view)
-			controller.on('goRegister', () => mountRegister())
-			controller.on('loggedIn', (result) => {
-				// Aquí podrías redirigir o cargar contenido privado
-				// Por ahora, volvemos a la vista de ejemplo
-				mountExample()
-			})
+// Router simple
+class Router {
+	constructor() {
+		this.routes = {
+			'/': mountExample,
+			'/login': mountLogin,
+			'/register': mountRegister,
+			'/noticias': mountAllNews,
+			'/noticias/:id': mountNoticia
+			
 		}
+		this.init()
+	}
 
-	// Render por defecto
-	mountExample()
+	init() {
+		// Manejar navegación inicial
+		window.addEventListener('popstate', () => {
+			this.route()
+		})
 
-	// Navegación simple: botón de la navbar
+		// Manejar clicks en links
+		document.addEventListener('click', (e) => {
+			if (e.target.matches('[data-link]')) {
+				e.preventDefault()
+				this.navigate(e.target.href)
+			}
+		})
+
+		this.route()
+	}
+
+	navigate(path) {
+		window.history.pushState(null, null, path)
+		this.route()
+	}
+
+	route() {
+		const path = window.location.pathname
+
+		const noticiaMatch = path.match(/^\/noticias\/(\d+)$/)
+		
+		if (noticiaMatch) {
+			mountNoticia(noticiaMatch[1])
+		} else if (path === '/noticias') {
+			mountAllNews()
+		} else {
+			const handler = this.routes[path] || this.routes['/']
+			handler()
+		}
+	}
+}
+
+// Funciones de montaje
+const mountExample = () => {
+	const root = document.getElementById('app')
+	if (!root) return
+	
+	root.innerHTML = ''
+	const model = new ExampleModel()
+	const view = new ExampleView(root)
+	// eslint-disable-next-line no-unused-vars
+	const controller = new ExampleController(model, view)
+
+	controller.on('verNoticia', (id) => {
+		router.navigate(`/noticias/${id}`)
+	})
+	
+	controller.on('verTodasNoticias', () => {
+		router.navigate('/noticias')
+	})
+}
+
+const mountRegister = () => {
+	const root = document.getElementById('app')
+	if (!root) return
+	
+	root.innerHTML = ''
+	const model = new RegisterModel()
+	const view = new RegisterView(root)
+	// eslint-disable-next-line no-unused-vars
+	const controller = new RegisterController(view, model)
+}
+
+const mountLogin = () => {
+	const root = document.getElementById('app')
+	if (!root) return
+	
+	root.innerHTML = ''
+	const view = new LoginView(root)
+	const controller = new LoginController(view)
+	controller.on('goRegister', () => {
+		router.navigate('/register')
+	})
+	controller.on('loggedIn', (result) => {
+		router.navigate('/')
+	})
+}
+
+const mountNoticia = (id) => {
+	const root = document.getElementById('app')
+	if (!root) return
+	
+	root.innerHTML = ''
+	const model = new NoticiaModel()
+	const view = new NoticiaView(root)
+	const controller = new NoticiaController(model, view, id)
+}
+
+const mountAllNews = () => {
+	const root = document.getElementById('app')
+	if (!root) return
+	
+	root.innerHTML = ''
+	const model = new AllNewsModel()
+	const view = new AllNewsView(root)
+	const controller = new AllNewsController(model, view)
+
+	controller.on('verNoticia', (id) => {
+		router.navigate(`/noticias/${id}`)
+	})
+}
+
+// Inicializar router
+const router = new Router()
+
+// Configurar botones con navegación
+const setupNavigation = () => {
 	const btnRegister = document.getElementById('btn-register')
+	const btnLogin = document.getElementById('btn-login')
+	const newsNavLink = document.getElementById('news-nav-link')
+
 	btnRegister?.addEventListener('click', (e) => {
 		e.preventDefault()
-		mountRegister()
+		router.navigate('/register')
 	})
 
-		const btnLogin = document.getElementById('btn-login')
-		btnLogin?.addEventListener('click', (e) => {
-			e.preventDefault()
-			mountLogin()
-		})
+	btnLogin?.addEventListener('click', (e) => {
+		e.preventDefault()
+		router.navigate('/login')
+	})
+
+	newsNavLink?.addEventListener('click', (e) => {
+		e.preventDefault()
+		router.navigate('/noticias')
+	})
 }
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+	setupNavigation()
+})
 
 // Inicializar búsqueda
 const searchInput = document.querySelector('input[type="search"]')

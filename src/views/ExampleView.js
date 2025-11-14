@@ -1,75 +1,161 @@
-// Vista: renderiza UI y emite eventos de interacción
+// Vista: renderiza UI de noticias musicales
 import EventEmitter from '../core/EventEmitter.js'
 
 export default class ExampleView extends EventEmitter {
   constructor(rootEl) {
     super()
     this.root = rootEl
-    this.root.classList.add('example-view')
+    this.root.classList.add('news-view')
     this._renderShell()
   }
 
   _renderShell() {
     this.root.innerHTML = `
-      <div class="card shadow-sm">
-        <div class="card-header d-flex align-items-center gap-2">
-          <i class="bi bi-music-note-list"></i>
-          <strong>Ejemplo MVC (lista simple)</strong>
+      <!-- Scción de cabecera -->
+      <section class="hero-section mb-5">
+        <div class="bg-dark text-white rounded-3 p-5 position-relative overflow-hidden">
+          <div class="position-absolute top-0 end-0 opacity-25">
+            <i class="bi bi-soundwave display-1"></i>
+          </div>
+          <div class="row align-items-center">
+            <div class="col-lg-8">
+              <h1 class="display-4 fw-bold mb-3">Undersounds</h1>
+              <p class="lead mb-4">Tu portal de música. Diseñado con los artistas en mente.</p>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <form id="add-form" class="d-flex gap-2 mb-3" autocomplete="off">
-            <input id="item-input" class="form-control" placeholder="Añadir elemento (p.ej. Merch)" />
-            <button class="btn btn-primary" type="submit">
-              <i class="bi bi-plus-lg"></i> Añadir
-            </button>
-          </form>
-          <ul id="list" class="list-group"></ul>
+      </section>
+
+      <!-- Sección de Noticias -->
+      <section class="news-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="h3 fw-bold">
+            <i class="bi bi-newspaper me-2"></i>Últimas Noticias
+          </h2>
+          <a href="#" class="btn btn-outline-primary" id="view-all-news">
+            Ver Todas <i class="bi bi-arrow-right ms-1"></i>
+          </a>
         </div>
-      </div>
+
+        <!-- Cargando.... -->
+        <div id="loading-state" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando noticias...</span>
+          </div>
+          <p class="text-muted mt-2">Cargando las últimas noticias...</p>
+        </div>
+
+        <!-- Error -->
+        <div id="error-state" class="alert alert-danger d-none" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <span id="error-message"></span>
+          <button class="btn btn-sm btn-outline-danger ms-3" id="retry-btn">Reintentar</button>
+        </div>
+
+        <!-- Grid de Noticias -->
+        <div id="news-grid" class="row g-4 d-none">
+          <!-- Las noticias se insertarán aquí dinámicamente -->
+        </div>
+      </section>
     `
 
-    this.$form = this.root.querySelector('#add-form')
-    this.$input = this.root.querySelector('#item-input')
-    this.$list = this.root.querySelector('#list')
+    this.$loading = this.root.querySelector('#loading-state')
+    this.$error = this.root.querySelector('#error-state')
+    this.$errorMessage = this.root.querySelector('#error-message')
+    this.$newsGrid = this.root.querySelector('#news-grid')
+    this.$retryBtn = this.root.querySelector('#retry-btn')
 
-    this.$form.addEventListener('submit', (e) => {
-      e.preventDefault()
-      this.emit('add', this.$input.value)
-      this.$input.value = ''
-      this.$input.focus()
+    this.$retryBtn.addEventListener('click', () => {
+      this.emit('cargarNoticias')
     })
+
+	this.root.querySelector('#view-all-news').addEventListener('click', (e) => {
+		e.preventDefault()
+		this.emit('verTodasNoticias')
+	})
   }
 
   render(state) {
-    // Rellena la lista
-    this.$list.innerHTML = ''
-
-    if (!state.items || state.items.length === 0) {
-      const li = document.createElement('li')
-      li.className = 'list-group-item text-muted'
-      li.textContent = 'Sin elementos aún'
-      this.$list.appendChild(li)
+    if (state.loading) {
+      this.$loading.classList.remove('d-none')
+      this.$error.classList.add('d-none')
+      this.$newsGrid.classList.add('d-none')
       return
     }
 
-    state.items.forEach((text, index) => {
-      const li = document.createElement('li')
-      li.className = 'list-group-item d-flex justify-content-between align-items-center'
-      li.innerHTML = `
-        <span>${text}</span>
-        <button class="btn btn-sm btn-outline-danger" data-index="${index}">
-          <i class="bi bi-trash"></i>
-        </button>
-      `
-      this.$list.appendChild(li)
-    })
+    if (state.error) {
+      this.$loading.classList.add('d-none')
+      this.$error.classList.remove('d-none')
+      this.$errorMessage.textContent = state.error
+      this.$newsGrid.classList.add('d-none')
+      return
+    }
 
-    // Delegación para borrar
-    this.$list.querySelectorAll('button[data-index]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const idx = Number(btn.getAttribute('data-index'))
-        this.emit('removeAt', idx)
-      })
-    })
+    this.$loading.classList.add('d-none')
+    this.$error.classList.add('d-none')
+    this.$newsGrid.classList.remove('d-none')
+
+    this._renderNoticias(state.noticias)
   }
+
+	_renderNoticias(noticias) {
+	if (!noticias || noticias.length === 0) {
+		this.$newsGrid.innerHTML = `
+		<div class="col-12 text-center py-5">
+			<i class="bi bi-inbox display-1 text-muted"></i>
+			<h3 class="h4 text-muted mt-3">No hay noticias disponibles</h3>
+			<p class="text-muted">Pronto tendremos nuevas noticias musicales para ti.</p>
+		</div>
+		`
+		return
+	}
+
+	this.$newsGrid.innerHTML = noticias.map(noticia => `
+		<div class="col-md-6 col-lg-3">
+		<article class="card h-100 news-card shadow-sm border-0">
+			<!-- Header con gradiente musical -->
+			<div class="card-header gradient-music border-0 position-relative" style="height: 120px;">
+			<div class="position-absolute top-50 start-50 translate-middle">
+				<i class="bi bi-music-note-beamed display-4 text-white opacity-75"></i>
+			</div>
+			</div>
+
+			<div class="card-body d-flex flex-column">
+			<!-- Fecha -->
+			<small class="text-muted mb-2">
+				<i class="bi bi-calendar-event me-1"></i>
+				${noticia.fechaFormateada}
+			</small>
+
+			<!-- Título -->
+			<h5 class="card-title fs-6 fw-bold text-dark line-clamp-2">${noticia.titulo}</h5>
+
+			<!-- Extracto del contenido -->
+			<p class="card-text text-muted small flex-grow-1 line-clamp-3">
+				${noticia.extracto}
+			</p>
+
+			<!-- Autor -->
+			<div class="d-flex align-items-center justify-content-between mt-auto pt-3">
+				<div class="d-flex align-items-center">
+				<small class="text-muted">${noticia.nombreAutor}</small>
+				</div>
+				<button class="btn btn-sm btn-outline-primary" data-id="${noticia.id}">
+				Leer más
+				</button>
+			</div>
+			</div>
+		</article>
+		</div>
+	`).join('')
+
+	// Event listeners para los botones
+	this.$newsGrid.querySelectorAll('button[data-id]').forEach(btn => {
+		btn.addEventListener('click', () => {
+		const id = btn.getAttribute('data-id')
+		this.emit('verNoticia', id)
+		})
+	})
+	}
+	
 }

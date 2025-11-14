@@ -1,7 +1,7 @@
 import EventEmitter from '../core/EventEmitter.js'
 import ApiClient from '../services/ApiClient.js'
 
-export default class ExampleModel extends EventEmitter {
+export default class AllNewsModel extends EventEmitter {
   constructor() {
     super()
     this.state = {
@@ -20,12 +20,11 @@ export default class ExampleModel extends EventEmitter {
       this.state = { ...this.state, loading: true, error: null }
       this.emit('change', this.getState())
       
-		const noticias = await ApiClient.getNoticias()
-		const noticiasLimitadas = noticias.slice(0,4)
+      const noticias = await ApiClient.getNoticias()
       
-      // Procesar las noticias y obtener nombres de autores
+      // Procesar las noticias
       const noticiasProcesadas = await Promise.all(
-        noticiasLimitadas.map(async (noticia) => {
+        noticias.map(async (noticia) => {
           const nombreAutor = await this.obtenerNombreAutor(noticia.autor)
           
           return {
@@ -37,10 +36,11 @@ export default class ExampleModel extends EventEmitter {
         })
       )
       
+      // Actualizar estado
       this.state = { 
         ...this.state, 
         noticias: noticiasProcesadas, 
-        loading: false 
+        loading: false
       }
       this.emit('change', this.getState())
     } catch (error) {
@@ -53,17 +53,15 @@ export default class ExampleModel extends EventEmitter {
     }
   }
 
-  // Método para obtener el nombre del autor desde la API de usuarios
+  // Método para obtener el nombre del autor
   async obtenerNombreAutor(idAutor) {
-    // Si el autor es 0, null o undefined, usar un valor por defecto
     if (!idAutor || idAutor === 0) {
       return 'Redactor'
     }
 
     try {
-      // Obtener información del usuario desde la API
       const usuario = await ApiClient.getUsuario(idAutor)
-      return usuario?.nombre
+      return usuario?.nombre || `Usuario ${idAutor}`
     } catch (error) {
       console.warn(`No se pudo obtener el autor ${idAutor}:`, error.message)
       return `Usuario ${idAutor}`

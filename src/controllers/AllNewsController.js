@@ -1,6 +1,6 @@
 import EventEmitter from '../core/EventEmitter.js'
 
-export default class ExampleController extends EventEmitter {
+export default class AllNewsController extends EventEmitter {
   constructor(model, view) {
     super()
     this.model = model
@@ -16,13 +16,21 @@ export default class ExampleController extends EventEmitter {
       this.model.cargarNoticias()
     })
 
-	  this.view.on('verNoticia', (id) => {
-		  this.emit('verNoticia', id)
-      })
+    this.view.on('filtrosCambiados', (filtros) => {
+      this.model.actualizarFiltros(filtros)
+    })
 
-	  this.view.on('verTodasNoticias', () => {
-		  this.emit('verTodasNoticias')
-      })
+    this.view.on('cambiarPagina', (pagina) => {
+      this.model.cambiarPagina(pagina)
+    })
+
+    this.view.on('verNoticia', (id) => {
+      this.emit('verNoticia', id)
+    })
+
+    this.view.on('goHome', () => {
+      this.emit('goHome')
+    })
 
     // Cargar noticias al inicializar
     this.model.cargarNoticias()

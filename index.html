@@ -2,57 +2,64 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>Undersounds</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Undersounds</title>
   </head>
   
   <body>
-	<nav class="navbar navbar-expand bg-dark border-bottom border-body" data-bs-theme="dark" >
-	  <div class="container">
-		<a href="#" class="navbar-brand"><i class="bi bi-soundwave"></i> Undersounds</a>
-
-		<div class="ms-auto d-flex align-items-center">
-		  <form class="d-flex me-3" role="search">
-			<input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Search"/>
-			<button class="btn btn-outline-success" type="submit"><i class="bi bi-search"></i>
-			</button>
-		  </form>
-
-					<button id="btn-login" class="btn btn-outline-light me-2">Iniciar Sesión</button>
-					<button id="btn-register" class="btn btn-primary">Registrarse</button>
-		</div>
-	  </div>
-	</nav>
-
-	<nav class="navbar navbar-expand bg-light border-bottom">
+    <nav class="navbar navbar-expand bg-dark border-bottom border-body" data-bs-theme="dark">
       <div class="container">
-        <div class="navbar-nav">
-          <a class="nav-link" href="#">
-			<i class="bi bi-file-music"></i> Digital
-		  </a>
-          <a class="nav-link" href="#">
-			<i class="bi bi-vinyl"></i> Vinilo
-		  </a>
-          <a class="nav-link" href="#">
-			<i class="bi bi-disc"></i> CD
-		  </a>
-          <a class="nav-link" href="#">
-			<i class="bi bi-cassette"></i> Cassette
-		  </a>
-          <a class="nav-link" href="#">
-			<i class="bi bi-bag"></i> Merch
-		  </a>
-          <a class="nav-link" href="#">
-			<i class="bi bi-newspaper"></i> Noticias
-		  </a>
+        <a href="/" class="navbar-brand" data-link>
+          <i class="bi bi-soundwave"></i> Undersounds
+        </a>
+
+        <div class="ms-auto d-flex align-items-center">
+          <form class="d-flex me-3" role="search">
+            <input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Search"/>
+            <button class="btn btn-outline-success" type="submit">
+              <i class="bi bi-search"></i>
+            </button>
+          </form>
+
+          <a href="/login" class="btn btn-outline-light me-2" data-link>
+            Iniciar Sesión
+          </a>
+          <a href="/register" class="btn btn-primary" data-link>
+            Registrarse
+          </a>
         </div>
       </div>
     </nav>
 
-	<div class="container mt-4">
-	  <div id="app"></div>
-	</div>
+    <nav class="navbar navbar-expand bg-light border-bottom">
+      <div class="container">
+        <div class="navbar-nav">
+          <a class="nav-link" href="#">
+            <i class="bi bi-file-music"></i> Digital
+          </a>
+          <a class="nav-link" href="#">
+            <i class="bi bi-vinyl"></i> Vinilo
+          </a>
+          <a class="nav-link" href="#">
+            <i class="bi bi-disc"></i> CD
+          </a>
+          <a class="nav-link" href="#">
+            <i class="bi bi-cassette"></i> Cassette
+          </a>
+          <a class="nav-link" href="#">
+            <i class="bi bi-bag"></i> Merch
+          </a>
+          <a class="nav-link" href="#" id="news-nav-link">
+            <i class="bi bi-newspaper"></i> Noticias
+          </a>
+        </div>
+      </div>
+    </nav>
 
-	<script type="module" src="src/main.js"></script>
+    <div class="container mt-4">
+      <div id="app"></div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
   </body>
 </html>
