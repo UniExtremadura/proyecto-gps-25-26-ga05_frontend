@@ -78,16 +78,7 @@ export default class RegisterView extends EventEmitter {
                   </div>
                 </div>
 
-                <div class="col-12 col-md-8">
-                  <label for="avatar" class="form-label">Imagen (avatar)</label>
-                  <input id="avatar" name="avatar" type="file" accept="image/*" class="form-control" />
-                  <div class="form-text">Formatos aceptados: JPG, PNG, GIF. Máximo 5 MB.</div>
-                </div>
-                <div class="col-12 col-md-4 d-flex align-items-center">
-                  <div class="w-100">
-                    <div class="avatar-preview mx-auto"></div>
-                  </div>
-                </div>
+                
 
                 <div class="col-12 col-md-6">
                   <label for="password" class="form-label">Contraseña</label>
@@ -120,8 +111,7 @@ export default class RegisterView extends EventEmitter {
     this.$form = this.root.querySelector('#register-form')
     this.$alerts = this.root.querySelector('#alerts')
   this.$userType = this.root.querySelector('#userTypeId')
-  this.$avatarInput = this.root.querySelector('#avatar')
-  this.$avatarPreview = this.root.querySelector('.avatar-preview')
+  
 
     this.$form.addEventListener('submit', (e) => {
       e.preventDefault()
@@ -129,18 +119,7 @@ export default class RegisterView extends EventEmitter {
       this.emit('submit', fd)
     })
 
-    // Vista previa del avatar
-    this.$avatarInput?.addEventListener('change', () => {
-      const file = this.$avatarInput.files?.[0]
-      if (!file) {
-        this.$avatarPreview?.setAttribute('style', '')
-        this.$avatarPreview?.classList.remove('has-image')
-        return
-      }
-      const url = URL.createObjectURL(file)
-      this.$avatarPreview?.classList.add('has-image')
-      this.$avatarPreview?.setAttribute('style', `background-image: url('${url}');`)
-    })
+    
   }
 
   showErrors(errors = []) {
@@ -164,10 +143,6 @@ export default class RegisterView extends EventEmitter {
 
   resetForm() {
     this.$form?.reset()
-    if (this.$avatarPreview) {
-      this.$avatarPreview.setAttribute('style', '')
-      this.$avatarPreview.classList.remove('has-image')
-    }
   }
 
   setUserTypes(types = []) {

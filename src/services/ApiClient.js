@@ -1,4 +1,4 @@
-// Cliente de API sencillo. Ajusta VITE_API_BASE_URL en `.env` si es necesario.
+// Cliente de API sencillo para microservicios "Contenido" y "Usuarios".
 const CONTENIDO_BASE = 'http://localhost:8081'
 const USUARIOS_BASE = 'http://localhost:8082'
 
@@ -12,7 +12,7 @@ async function http(base, url, opts = {}) {
     data = await res.text().catch(() => null)
   }
   if (!res.ok) {
-    const message = (data && data.message) || res.statusText || 'Error de red'
+    const message = (data && (data.error || data.message)) || res.statusText || 'Error de red'
     throw new Error(message)
   }
   return data
@@ -20,25 +20,57 @@ async function http(base, url, opts = {}) {
 
 export default {
   async getUserTypes() {
-    // Esperado: [{ id: 1, name: 'Cliente' }, { id: 2, name: 'Vendedor' }, ...]
-    return http('/api/user-types')
+    // Tipos soportados por el microservicio de usuarios
+    // 2 => Artista, 4 => Usuario básico
+    return [
+      { id: 4, name: 'Usuario' },
+      { id: 2, name: 'Artista' },
+    ]
   },
 
   async registerUser(formData) {
-    // formData: instancia de FormData con todos los campos e imagen
-    return http('/api/users/register', {
+    // formData: instancia de FormData con campos del formulario de registro
+    // Mapear a contrato del microservicio (JSON, no multipart)
+    const nombre = (formData.get('name') || '').toString().trim()
+    const correo = (formData.get('email') || '').toString().trim()
+    const contrasena = (formData.get('password') || '').toString()
+    const direccion = (formData.get('address') || '').toString().trim()
+    const telefono = (formData.get('phone') || '').toString().trim()
+    const descripcion = (formData.get('description') || '').toString()
+    // El backend espera una URL de imagen, por ahora enviamos vacío si subieron archivo local
+    const urlImagen = ''
+    let tipo = parseInt((formData.get('userTypeId') || '4').toString(), 10)
+    if (tipo !== 2 && tipo !== 4) tipo = 4
+
+    const body = {
+      nombre,
+      correo,
+      contrasena,
+      direccion,
+      telefono,
+      descripcion,
+      urlImagen,
+      tipo,
+    }
+
+    return http(USUARIOS_BASE, '/usuarios', {
       method: 'POST',
-      body: formData, // fetch pone Content-Type multipart automáticamente
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     })
   },
 
   async loginUser(credentials) {
     // credentials: { email, password, remember?: boolean }
-    return http('/api/users/login', {
+    const body = {
+      correo: credentials.email,
+      contrasena: credentials.password,
+    }
+    // El microservicio usa POST /usuarios para login si solo hay correo y contrasena
+    return http(USUARIOS_BASE, '/usuarios', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
-      // Añade 'credentials: "include"' si el backend usa cookies de sesión
+      body: JSON.stringify(body),
     })
   },
 
@@ -51,6 +83,6 @@ export default {
 	},
 
 	async getUsuario(id) {
-		return http(USUARIOS_BASE, '/usuarios/' + id)
+    return http(USUARIOS_BASE, '/usuarios/' + id)
 	}
 }
