@@ -52,5 +52,32 @@ export default {
 
 	async getUsuario(id) {
 		return http(USUARIOS_BASE, '/usuarios/' + id)
-	}
+  },
+
+  // Comunidad de artista
+  async getCommunityPosts(idComunidad) {
+    return http(USUARIOS_BASE, `/comunidades/${idComunidad}/posts`)
+  },
+
+  async createCommunityPost(idComunidad, { comentario, postPadre = null, idUsuario }) {
+    const payload = { comentario, idUsuario }
+    if (postPadre !== null && postPadre !== undefined) payload.postPadre = postPadre
+    return http(USUARIOS_BASE, `/comunidades/${idComunidad}/posts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+  },
+
+  async deleteCommunityPost(idPost) {
+    return http(USUARIOS_BASE, `/posts/${idPost}`, { method: 'DELETE' })
+  },
+
+  async getPost(idPost) {
+    return http(USUARIOS_BASE, `/posts/${idPost}`)
+  },
+
+  async getPostReplies(idPost) {
+    return http(USUARIOS_BASE, `/posts/${idPost}/respuestas`)
+  }
 }

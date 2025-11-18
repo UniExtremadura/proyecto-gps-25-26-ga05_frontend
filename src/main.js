@@ -26,6 +26,11 @@ import AllNewsModel from './models/AllNewsModel.js'
 import NoticiaController from './controllers/NoticiaController.js'
 import AllNewsController from './controllers/AllNewsController.js'
 
+// Comunidad de artista
+import CommunityModel from './models/CommunityModel.js'
+import CommunityView from './views/CommunityView.js'
+import CommunityController from './controllers/CommunityController.js'
+
 // Router simple
 class Router {
 	constructor() {
@@ -66,9 +71,12 @@ class Router {
 		const path = window.location.pathname
 
 		const noticiaMatch = path.match(/^\/noticias\/(\d+)$/)
+		const comunidadMatch = path.match(/^\/comunidades\/(\d+)$/)
 		
 		if (noticiaMatch) {
 			mountNoticia(noticiaMatch[1])
+		} else if (comunidadMatch) {
+			mountCommunity(comunidadMatch[1])
 		} else if (path === '/noticias') {
 			mountAllNews()
 		} else {
@@ -146,6 +154,17 @@ const mountAllNews = () => {
 	controller.on('verNoticia', (id) => {
 		router.navigate(`/noticias/${id}`)
 	})
+}
+
+const mountCommunity = (idComunidad) => {
+	const root = document.getElementById('app')
+	if (!root) return
+
+	root.innerHTML = ''
+	const model = new CommunityModel()
+	const view = new CommunityView(root)
+	// eslint-disable-next-line no-unused-vars
+	const controller = new CommunityController(model, view, idComunidad)
 }
 
 // Inicializar router
