@@ -1,8 +1,9 @@
 // Cliente de API sencillo. Ajusta VITE_API_BASE_URL en `.env` si es necesario.
-const BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
+const CONTENIDO_BASE = 'http://localhost:8081'
+const USUARIOS_BASE = 'http://localhost:8082'
 
-async function http(url, opts = {}) {
-  const res = await fetch(BASE + url, opts)
+async function http(base, url, opts = {}) {
+  const res = await fetch(base + url, opts)
   const contentType = res.headers.get('content-type') || ''
   let data = null
   if (contentType.includes('application/json')) {
@@ -40,4 +41,16 @@ export default {
       // Añade 'credentials: "include"' si el backend usa cookies de sesión
     })
   },
+
+	async getNoticias() {
+		return http(CONTENIDO_BASE, '/noticias')
+	},
+
+	async getNoticia(id) {
+		return http(CONTENIDO_BASE, '/noticias/' + id)
+	},
+
+	async getUsuario(id) {
+		return http(USUARIOS_BASE, '/usuarios/' + id)
+	}
 }
