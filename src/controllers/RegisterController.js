@@ -29,7 +29,6 @@ export default class RegisterController extends EventEmitter {
     const description = (formData.get('description') || '').toString()
     const password = (formData.get('password') || '').toString()
     const confirm = (formData.get('confirm') || '').toString()
-    const avatar = formData.get('avatar')
 
     if (!name) errors.push('El nombre es obligatorio.')
     const emailOk = /^(?:[A-Z0-9._%+-]+)@(?:[A-Z0-9-]+\.)+[A-Z]{2,}$/i.test(email)
@@ -40,12 +39,7 @@ export default class RegisterController extends EventEmitter {
     if (password.length < 6) errors.push('La contraseña debe tener al menos 6 caracteres.')
     if (password !== confirm) errors.push('Las contraseñas no coinciden.')
 
-    if (avatar && avatar.size) {
-      const maxSize = 5 * 1024 * 1024 // 5MB
-      if (avatar.size > maxSize) errors.push('La imagen debe pesar menos de 5MB.')
-      const typeOk = /^image\//.test(avatar.type)
-      if (!typeOk) errors.push('El archivo debe ser una imagen válida.')
-    }
+    // La imagen de perfil ya no se solicita; se usará un icono por defecto.
 
     if (errors.length) {
       this.view.showErrors(errors)
@@ -53,8 +47,18 @@ export default class RegisterController extends EventEmitter {
     }
 
     try {
-      // Llamada real a backend (multipart)
-      await ApiClient.registerUser(formData)
+      // Llamada al microservicio de usuarios (JSON)
+      const result = await ApiClient.registerUser(formData)
+      // Guardar token e información básica si el backend lo devuelve tras registro
+      if (result && result.token) {
+        try {
+          localStorage.setItem('authToken', result.token)
+          const userPayload = { id: result.id, nombre: result.nombre, correo: result.correo, tipo: result.tipo }
+          localStorage.setItem('authUser', JSON.stringify(userPayload))
+          // Eliminamos cualquier resto previo de authUserId
+          try { localStorage.removeItem('authUserId') } catch {}
+        } catch {}
+      }
       this.view.showSuccess('¡Tu cuenta ha sido creada!')
       this.view.resetForm()
       this.emit('registered', { name, email, userTypeId, phone, address, description })

@@ -23,7 +23,15 @@ export default class LoginController extends EventEmitter {
 
     try {
       const result = await ApiClient.loginUser({ email, password, remember: remember === '1' })
-      // Aquí podrías guardar token/cookie según lo que devuelva el backend
+      // Guardar token e información básica del usuario
+      if (result && result.token) {
+        try {
+          localStorage.setItem('authToken', result.token)
+          localStorage.setItem('authUser', JSON.stringify({ id: result.id, nombre: result.nombre, correo: result.correo, tipo: result.tipo }))
+          // Eliminamos cualquier resto previo de authUserId
+          try { localStorage.removeItem('authUserId') } catch {}
+        } catch {}
+      }
       this.view.showSuccess('¡Bienvenido!')
       this.emit('loggedIn', result)
     } catch (err) {
