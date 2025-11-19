@@ -27,7 +27,9 @@ export default class LoginController extends EventEmitter {
       if (result && result.token) {
         try {
           localStorage.setItem('authToken', result.token)
-          localStorage.setItem('authUser', JSON.stringify({ id: result.id, nombre: result.nombre, correo: result.correo, tipo: result.tipo, urlImagen: result.urlImagen }))
+          localStorage.setItem('authUser', JSON.stringify({ id: result.id, nombre: result.nombre, correo: result.correo, tipo: result.tipo }))
+          // Eliminamos cualquier resto previo de authUserId
+          try { localStorage.removeItem('authUserId') } catch {}
         } catch {}
       }
       this.view.showSuccess('¡Bienvenido!')

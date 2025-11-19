@@ -53,8 +53,10 @@ export default class RegisterController extends EventEmitter {
       if (result && result.token) {
         try {
           localStorage.setItem('authToken', result.token)
-          const userPayload = { id: result.id, nombre: result.nombre, correo: result.correo, tipo: result.tipo, urlImagen: result.urlImagen }
+          const userPayload = { id: result.id, nombre: result.nombre, correo: result.correo, tipo: result.tipo }
           localStorage.setItem('authUser', JSON.stringify(userPayload))
+          // Eliminamos cualquier resto previo de authUserId
+          try { localStorage.removeItem('authUserId') } catch {}
         } catch {}
       }
       this.view.showSuccess('¡Tu cuenta ha sido creada!')
