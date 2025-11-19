@@ -18,13 +18,18 @@ import SearchModel from './models/SearchModel.js'
 import SearchView from './views/SearchView.js'
 import SearchController from './controllers/SearchController.js'
 
-//Noticias
+// Noticias
 import NoticiaView from './views/NoticiaView.js'
 import AllNewsView from './views/AllNewsView.js'
 import NoticiaModel from './models/NoticiaModel.js'
 import AllNewsModel from './models/AllNewsModel.js'
 import NoticiaController from './controllers/NoticiaController.js'
 import AllNewsController from './controllers/AllNewsController.js'
+
+// Subir álbumes
+import UploadAlbumModel from './models/UploadAlbumModel.js'
+import UploadAlbumView from './views/UploadAlbumView.js'
+import UploadAlbumController from './controllers/UploadAlbumController.js'
 
 // Router simple
 class Router {
@@ -34,8 +39,8 @@ class Router {
 			'/login': mountLogin,
 			'/register': mountRegister,
 			'/noticias': mountAllNews,
-			'/noticias/:id': mountNoticia
-			
+			'/noticias/:id': mountNoticia,
+			'/upload-album': mountUploadAlbum
 		}
 		this.init()
 	}
@@ -146,6 +151,20 @@ const mountAllNews = () => {
 	controller.on('verNoticia', (id) => {
 		router.navigate(`/noticias/${id}`)
 	})
+}
+
+const mountUploadAlbum = () => {
+  const root = document.getElementById('app')
+  if (!root) return
+  
+  root.innerHTML = ''
+  const model = new UploadAlbumModel()
+  const view = new UploadAlbumView(root)
+  const controller = new UploadAlbumController(model, view)
+
+  controller.on('cancelar', () => {
+    router.navigate('/')
+  })
 }
 
 // Inicializar router
