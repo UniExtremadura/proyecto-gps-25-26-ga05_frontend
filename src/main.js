@@ -1,6 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
+import './style.css'
 import './styleSearch.css'
 
 // MVC demo minimal: Model-View-Controller wiring
@@ -35,27 +36,21 @@ import CommunityController from './controllers/CommunityController.js'
 class Router {
 	constructor() {
 		this.routes = {
-			'/': mountExample,
-			'/login': mountLogin,
-			'/register': mountRegister,
-			'/noticias': mountAllNews,
-			'/noticias/:id': mountNoticia
-			
+			'/': () => mountExample(),
+			'/login': () => mountLogin(),
+			'/register': () => mountRegister(),
+			'/noticias': () => mountAllNews()
 		}
 		this.init()
 	}
 
 	init() {
-		// Manejar navegación inicial
-		window.addEventListener('popstate', () => {
-			this.route()
-		})
+		window.addEventListener('popstate', () => this.route())
 
-		// Manejar clicks en links
 		document.addEventListener('click', (e) => {
 			if (e.target.matches('[data-link]')) {
 				e.preventDefault()
-				this.navigate(e.target.href)
+				this.navigate(e.target.getAttribute('href'))
 			}
 		})
 
@@ -63,20 +58,16 @@ class Router {
 	}
 
 	navigate(path) {
-		window.history.pushState(null, null, path)
+		window.history.pushState(null, '', path)
 		this.route()
 	}
 
 	route() {
 		const path = window.location.pathname
-
 		const noticiaMatch = path.match(/^\/noticias\/(\d+)$/)
 		const comunidadMatch = path.match(/^\/comunidades\/(\d+)$/)
-		
 		if (noticiaMatch) {
 			mountNoticia(noticiaMatch[1])
-		} else if (comunidadMatch) {
-			mountCommunity(comunidadMatch[1])
 		} else if (path === '/noticias') {
 			mountAllNews()
 		} else {
@@ -107,14 +98,18 @@ const mountExample = () => {
 }
 
 const mountRegister = () => {
-	const root = document.getElementById('app')
-	if (!root) return
-	
-	root.innerHTML = ''
-	const model = new RegisterModel()
-	const view = new RegisterView(root)
-	// eslint-disable-next-line no-unused-vars
+  const root = document.getElementById('app')
+  if (!root) return
+  
+  root.innerHTML = ''
+  const model = new RegisterModel()
+  const view = new RegisterView(root)
+  // eslint-disable-next-line no-unused-vars
 	const controller = new RegisterController(view, model)
+	controller.on('registered', () => {
+		renderAuthArea()
+		router.navigate('/')
+	})
 }
 
 const mountLogin = () => {
@@ -128,6 +123,7 @@ const mountLogin = () => {
 		router.navigate('/register')
 	})
 	controller.on('loggedIn', (result) => {
+		renderAuthArea()
 		router.navigate('/')
 	})
 }
@@ -143,17 +139,17 @@ const mountNoticia = (id) => {
 }
 
 const mountAllNews = () => {
-	const root = document.getElementById('app')
-	if (!root) return
-	
-	root.innerHTML = ''
-	const model = new AllNewsModel()
-	const view = new AllNewsView(root)
-	const controller = new AllNewsController(model, view)
+  const root = document.getElementById('app')
+  if (!root) return
 
-	controller.on('verNoticia', (id) => {
-		router.navigate(`/noticias/${id}`)
-	})
+  root.innerHTML = ''
+  const model = new AllNewsModel()
+  const view = new AllNewsView(root)
+  const controller = new AllNewsController(model, view)
+
+  controller.on('verNoticia', (id) => {
+    router.navigate(`/noticias/${id}`)
+  })
 }
 
 const mountCommunity = (idComunidad) => {
@@ -170,40 +166,107 @@ const mountCommunity = (idComunidad) => {
 // Inicializar router
 const router = new Router()
 
-// Configurar botones con navegación
+// Configurar botones con navegación de la barra superior
 const setupNavigation = () => {
+	const newsNavLink = document.getElementById('news-nav-link')
+	newsNavLink?.addEventListener('click', (e) => {
+		e.preventDefault()
+		router.navigate('/noticias')
+	})
+
+	attachAuthAreaHandlers()
+}
+
+// Render dinámico del área de autenticación en el header
+const getAuthUser = () => {
+	try {
+		return JSON.parse(localStorage.getItem('authUser') || 'null')
+	} catch {
+		return null
+	}
+}
+
+const logout = () => {
+	try {
+		localStorage.removeItem('authToken')
+		localStorage.removeItem('authUser')
+	} catch {}
+	renderAuthArea()
+	router.navigate('/')
+}
+
+const renderAuthArea = () => {
+	const container = document.getElementById('auth-area')
+	if (!container) return
+	const user = getAuthUser()
+
+	if (!user) {
+		container.innerHTML = `
+			<a id="btn-login" href="/login" class="btn btn-outline-light me-2" data-link>Iniciar Sesión</a>
+			<a id="btn-register" href="/register" class="btn btn-primary" data-link>Registrarse</a>
+		`
+	} else {
+		const avatarUrl = user.urlImagen && String(user.urlImagen).trim().length > 0 ? user.urlImagen : ''
+		const avatar = avatarUrl
+			? `<img src="${avatarUrl}" alt="avatar" class="rounded-circle" style="width:32px;height:32px;object-fit:cover;">`
+			: `<i class="bi bi-person-circle fs-4"></i>`
+
+		container.innerHTML = `
+			<div class="dropdown">
+				<button class="btn btn-dark dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+					${avatar}
+					<span class="d-none d-md-inline">${user.nombre || user.correo || 'Perfil'}</span>
+				</button>
+				<ul class="dropdown-menu dropdown-menu-end">
+					<li><h6 class="dropdown-header">${user.correo || ''}</h6></li>
+					<li><a class="dropdown-item" href="#" id="nav-profile">Perfil</a></li>
+					<li><hr class="dropdown-divider"></li>
+					<li><a class="dropdown-item text-danger" href="#" id="nav-logout">Cerrar sesión</a></li>
+				</ul>
+			</div>
+		`
+	}
+
+	attachAuthAreaHandlers()
+}
+
+const attachAuthAreaHandlers = () => {
 	const btnRegister = document.getElementById('btn-register')
 	const btnLogin = document.getElementById('btn-login')
-	const newsNavLink = document.getElementById('news-nav-link')
+	const btnLogout = document.getElementById('nav-logout')
+	const btnProfile = document.getElementById('nav-profile')
 
 	btnRegister?.addEventListener('click', (e) => {
 		e.preventDefault()
 		router.navigate('/register')
 	})
-
 	btnLogin?.addEventListener('click', (e) => {
 		e.preventDefault()
 		router.navigate('/login')
 	})
-
-	newsNavLink?.addEventListener('click', (e) => {
+	btnLogout?.addEventListener('click', (e) => {
 		e.preventDefault()
-		router.navigate('/noticias')
+		logout()
+	})
+	btnProfile?.addEventListener('click', (e) => {
+		e.preventDefault()
+		// Pendiente: navegar a página de perfil cuando exista
 	})
 }
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
-	setupNavigation()
+  setupNavigation()
+	renderAuthArea()
+
+  // Inicializar búsqueda
+  const searchInput = document.querySelector('input[type="search"]')
+  const searchButton = document.querySelector('button[type="submit"]')
+
+  if (searchInput && searchButton) {
+    const searchModel = new SearchModel()
+    const searchView = new SearchView(searchInput, searchButton)
+    // eslint-disable-next-line no-unused-vars
+    const searchController = new SearchController(searchModel, searchView)
+  }
 })
-
-// Inicializar búsqueda
-const searchInput = document.querySelector('input[type="search"]')
-const searchButton = document.querySelector('button[type="submit"]')
-
-if (searchInput && searchButton) {
-	const searchModel = new SearchModel()
-	const searchView = new SearchView(searchInput, searchButton)
-	// eslint-disable-next-line no-unused-vars
-	const searchController = new SearchController(searchModel, searchView)
-}
