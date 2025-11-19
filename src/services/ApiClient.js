@@ -84,5 +84,14 @@ export default {
 
 	async getUsuario(id) {
     return http(USUARIOS_BASE, '/usuarios/' + id)
+	},
+
+	async getUsuarios() {
+		return http(USUARIOS_BASE, '/usuarios')
+	},
+
+	async getArtistas() {
+		// Obtener usuarios de tipo artista (tipo=2) del microservicio de usuarios
+		return http(USUARIOS_BASE, '/usuarios?tipo=2')
 	}
 }

@@ -21,18 +21,6 @@ export default class ExampleView extends EventEmitter {
             <div class="col-lg-8">
               <h1 class="display-4 fw-bold mb-3">Undersounds</h1>
               <p class="lead mb-4">Tu portal de música. Diseñado con los artistas en mente.</p>
-              <div class="alert alert-info">
-                <i class="bi bi-info-circle"></i> 
-                <strong>Demo de routing de artistas:</strong><br>
-                <small>
-                  <strong>Vista pública:</strong> 
-                  <a href="/artista/1" class="alert-link" data-link>Yung Beef</a> | 
-                  <a href="/artista/2" class="alert-link" data-link>Artista Demo</a><br>
-                  <strong>Vista owner (con edición):</strong> 
-                  <a href="/artista/1/owner" class="alert-link" data-link>Yung Beef (owner)</a> | 
-                  <a href="/artista/2/owner" class="alert-link" data-link>Artista Demo (owner)</a>
-                </small>
-              </div>
             </div>
           </div>
         </div>

@@ -66,12 +66,12 @@ class Router {
 			return
 		}
 		
-		// Match para rutas de artista
-		const artistaMatch = path.match(/^\/artista\/(\d+)(\/owner)?$/)
-		if (artistaMatch) {
-			const artistId = parseInt(artistaMatch[1], 10)
-			const isOwner = !!artistaMatch[2]
-			mountArtista(artistId, isOwner)
+		// Match para rutas de usuario (incluye artistas)
+		const usuarioMatch = path.match(/^\/usuario\/(\d+)(\/owner)?$/)
+		if (usuarioMatch) {
+			const userId = parseInt(usuarioMatch[1], 10)
+			const isOwner = !!usuarioMatch[2]
+			mountUsuario(userId, isOwner)
 			return
 		}
 		
@@ -155,13 +155,13 @@ const mountAllNews = () => {
   })
 }
 
-const mountArtista = (artistId, isOwner = false) => {
+const mountUsuario = (userId, isOwner = false) => {
 	const root = document.getElementById('app')
 	if (!root) return
 	
 	root.innerHTML = ''
 	// eslint-disable-next-line no-unused-vars
-	const controller = new ArtistaController(root, artistId, isOwner)
+	const controller = new ArtistaController(root, userId, isOwner)
 }
 
 // Inicializar router

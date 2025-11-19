@@ -17,7 +17,9 @@ export default class ArtistaView extends EventEmitter {
         <div class="card-body">
           <div class="row g-3 align-items-center">
             <div class="col-auto">
-              <img id="artistAvatar" src="/public/default-profile.png" alt="Avatar" class="rounded-circle" style="width:120px;height:120px;object-fit:cover;">
+              <div id="artistAvatar" class="rounded-circle d-flex align-items-center justify-content-center" style="width:120px;height:120px;background-color:#e9ecef;">
+                <i class="bi bi-person-circle" style="font-size:120px;color:#6c757d;"></i>
+              </div>
             </div>
             <div class="col">
               <h2 id="artistName" class="h4 mb-1">Nombre del Artista</h2>
@@ -29,7 +31,15 @@ export default class ArtistaView extends EventEmitter {
                 ${this.isOwner ? editButtonHtml : '<button id="followBtn" class="btn btn-success btn-sm">Seguir</button>'}
                 <button id="communityBtn" class="btn btn-outline-secondary btn-sm">Comunidad</button>
               </div>
-              <div id="artistSocials" class="d-flex gap-2 flex-wrap"></div>
+              <div id="artistSocials" class="d-flex gap-2 flex-wrap mb-3"></div>
+              
+              <!-- Información del usuario integrada -->
+              <div id="moreInfo" class="mt-2">
+                <p id="artistBio" class="text-muted mb-2" style="font-size:0.95rem;">Biografía...</p>
+                <div class="text-muted small">
+                  <span id="artistEmail">—</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -37,29 +47,47 @@ export default class ArtistaView extends EventEmitter {
       
       <div id="editPanel" class="card shadow-sm mb-4" hidden>
         <div class="card-body">
-          <h5 class="card-title"><i class="bi bi-gear"></i> Configurar visibilidad del perfil</h5>
-          <p class="text-muted small">Selecciona qué secciones quieres mostrar en tu perfil público</p>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="checkPopulares" checked>
-            <label class="form-check-label" for="checkPopulares">Mostrar sección Populares</label>
+          <h5 class="card-title"><i class="bi bi-pencil"></i> Editar Perfil</h5>
+          <p class="text-muted small">Modifica la información de tu perfil</p>
+          
+          <div class="mb-3">
+            <label for="editNombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="editNombre" placeholder="Nombre completo">
           </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="checkCanciones" checked>
-            <label class="form-check-label" for="checkCanciones">Mostrar sección Canciones</label>
+          
+          <div class="mb-3">
+            <label for="editDescripcion" class="form-label">Descripción</label>
+            <textarea class="form-control" id="editDescripcion" rows="3" placeholder="Cuéntanos sobre ti..."></textarea>
           </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="checkAlbumes" checked>
-            <label class="form-check-label" for="checkAlbumes">Mostrar sección Álbumes</label>
+          
+          <div class="mb-3">
+            <label for="editCorreo" class="form-label">Correo</label>
+            <input type="email" class="form-control" id="editCorreo" placeholder="tu@email.com">
           </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="checkMerch" checked>
-            <label class="form-check-label" for="checkMerch">Mostrar sección Merchandising</label>
+          
+          <div id="artistVisibilitySection" hidden>
+            <hr class="my-3">
+            <h6 class="mb-2"><i class="bi bi-gear"></i> Configurar visibilidad del perfil</h6>
+            <p class="text-muted small mb-2">Selecciona qué secciones quieres mostrar en tu perfil público</p>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="checkPopulares" checked>
+              <label class="form-check-label" for="checkPopulares">Mostrar sección Populares</label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="checkCanciones" checked>
+              <label class="form-check-label" for="checkCanciones">Mostrar sección Canciones</label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="checkAlbumes" checked>
+              <label class="form-check-label" for="checkAlbumes">Mostrar sección Álbumes</label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="checkMerch" checked>
+              <label class="form-check-label" for="checkMerch">Mostrar sección Merchandising</label>
+            </div>
           </div>
-          <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" id="checkMoreInfo" checked>
-            <label class="form-check-label" for="checkMoreInfo">Mostrar sección Más información</label>
-          </div>
-          <div class="d-flex gap-2">
+          
+          <div class="d-flex gap-2 mt-3">
             <button id="saveProfileBtn" class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar cambios</button>
             <button id="cancelEditBtn" class="btn btn-secondary">Cancelar</button>
           </div>
@@ -91,21 +119,6 @@ export default class ArtistaView extends EventEmitter {
           <div id="merchCarousel" class="d-flex overflow-auto gap-3 py-2"></div>
         </div>
       </div>
-
-      <div class="card mt-3" id="sectionMoreInfo">
-        <div class="card-body">
-          <button id="toggleMoreInfo" class="btn btn-link p-0">Más información</button>
-          <div id="moreInfo" class="mt-3" hidden>
-            <h6>Sobre el artista</h6>
-            <p id="artistBio" class="text-muted">Biografía...</p>
-            <ul class="list-unstyled small text-muted">
-              <li><strong>Género:</strong> <span id="artistGenre">—</span></li>
-              <li><strong>País:</strong> <span id="artistCountry">—</span></li>
-              <li><strong>Año de inicio:</strong> <span id="artistStarted">—</span></li>
-            </ul>
-          </div>
-        </div>
-      </div>
     `
 
     // Referencias a elementos
@@ -120,20 +133,20 @@ export default class ArtistaView extends EventEmitter {
     this.$songs = this.root.querySelector('#songsCarousel')
     this.$albums = this.root.querySelector('#albumsCarousel')
     this.$merch = this.root.querySelector('#merchCarousel')
-    this.$toggleMore = this.root.querySelector('#toggleMoreInfo')
     this.$more = this.root.querySelector('#moreInfo')
     this.$bio = this.root.querySelector('#artistBio')
-    this.$genre = this.root.querySelector('#artistGenre')
-    this.$country = this.root.querySelector('#artistCountry')
-    this.$started = this.root.querySelector('#artistStarted')
+    this.$email = this.root.querySelector('#artistEmail')
     
     // Panel de edición
     this.$editPanel = this.root.querySelector('#editPanel')
+    this.$editNombre = this.root.querySelector('#editNombre')
+    this.$editDescripcion = this.root.querySelector('#editDescripcion')
+    this.$editCorreo = this.root.querySelector('#editCorreo')
+    this.$artistVisibilitySection = this.root.querySelector('#artistVisibilitySection')
     this.$checkPopulares = this.root.querySelector('#checkPopulares')
     this.$checkCanciones = this.root.querySelector('#checkCanciones')
     this.$checkAlbumes = this.root.querySelector('#checkAlbumes')
     this.$checkMerch = this.root.querySelector('#checkMerch')
-    this.$checkMoreInfo = this.root.querySelector('#checkMoreInfo')
     this.$saveProfile = this.root.querySelector('#saveProfileBtn')
     this.$cancelEdit = this.root.querySelector('#cancelEditBtn')
     
@@ -142,7 +155,6 @@ export default class ArtistaView extends EventEmitter {
     this.$sectionCanciones = this.root.querySelector('#sectionCanciones')
     this.$sectionAlbumes = this.root.querySelector('#sectionAlbumes')
     this.$sectionMerch = this.root.querySelector('#sectionMerch')
-    this.$sectionMoreInfo = this.root.querySelector('#sectionMoreInfo')
 
     // Listeners
     if (this.$follow) {
@@ -151,19 +163,27 @@ export default class ArtistaView extends EventEmitter {
     if (this.$editProfile) {
       this.$editProfile.addEventListener('click', () => this.emit('editProfile'))
     }
-    this.$toggleMore.addEventListener('click', () => this.emit('moreInfoToggle'))
     this.$community.addEventListener('click', () => this.emit('goCommunity'))
     
     if (this.$saveProfile) {
       this.$saveProfile.addEventListener('click', () => {
-        const settings = {
-          showPopulares: this.$checkPopulares.checked,
-          showCanciones: this.$checkCanciones.checked,
-          showAlbumes: this.$checkAlbumes.checked,
-          showMerch: this.$checkMerch.checked,
-          showMoreInfo: this.$checkMoreInfo.checked
+        const profileData = {
+          nombre: this.$editNombre.value.trim(),
+          descripcion: this.$editDescripcion.value.trim(),
+          correo: this.$editCorreo.value.trim()
         }
-        this.emit('saveProfile', settings)
+        
+        // Solo incluir settings de visibilidad si es artista
+        if (!this.$artistVisibilitySection.hidden) {
+          profileData.visibilitySettings = {
+            showPopulares: this.$checkPopulares.checked,
+            showCanciones: this.$checkCanciones.checked,
+            showAlbumes: this.$checkAlbumes.checked,
+            showMerch: this.$checkMerch.checked
+          }
+        }
+        
+        this.emit('saveProfile', profileData)
       })
     }
     
@@ -172,10 +192,10 @@ export default class ArtistaView extends EventEmitter {
     }
   }
 
-  render(artist, visibilitySettings = {}) {
-    if (!artist) return
+  render(usuario, isArtist = false, visibilitySettings = {}) {
+    if (!usuario) return
     
-    // Valores por defecto
+  // Valores por defecto
     const visibility = {
       showPopulares: true,
       showCanciones: true,
@@ -185,20 +205,40 @@ export default class ArtistaView extends EventEmitter {
       ...visibilitySettings
     }
     
-    this.$avatar.src = artist.imagen || '/public/default-profile.png'
-    this.$name.textContent = artist.nombre || '—'
-    this.$listeners.textContent = (artist.oyentesMensuales || 0).toLocaleString()
-    this.$bio.textContent = artist.bio || ''
-    this.$genre.textContent = artist.genre || '—'
-    this.$country.textContent = artist.country || '—'
-    this.$started.textContent = artist.started || '—'
+    // Mapeo de campos de base de datos a vista
+    // Avatar hardcodeado como icono de Bootstrap (provisional)
+    // this.$avatar ya contiene el icono, no necesitamos modificarlo
     
-    // Aplicar visibilidad
-    this.$sectionPopulares.hidden = !visibility.showPopulares
-    this.$sectionCanciones.hidden = !visibility.showCanciones
-    this.$sectionAlbumes.hidden = !visibility.showAlbumes
-    this.$sectionMerch.hidden = !visibility.showMerch
-    this.$sectionMoreInfo.hidden = !visibility.showMoreInfo
+    this.$name.textContent = usuario.nombre || '—'
+    
+    // Mostrar información de contacto en la biografía para usuarios no artistas
+    this.$bio.textContent = usuario.descripcion || 'Sin descripción'
+    
+    // Mostrar solo el correo (información pública no intrusiva)
+    this.$email.textContent = usuario.correo || ''
+    
+    // Si es artista, mostramos oyentes mensuales
+    if (isArtist) {
+      this.$listeners.textContent = (usuario.oyentesMensuales || 0).toLocaleString()
+      this.$listeners.parentElement.style.display = 'flex'
+    } else {
+      // Para usuarios no artistas, ocultamos esta información
+      this.$listeners.parentElement.style.display = 'none'
+    }
+    
+    // Aplicar visibilidad (solo para artistas)
+    if (isArtist) {
+      this.$sectionPopulares.hidden = !visibility.showPopulares
+      this.$sectionCanciones.hidden = !visibility.showCanciones
+      this.$sectionAlbumes.hidden = !visibility.showAlbumes
+      this.$sectionMerch.hidden = !visibility.showMerch
+    } else {
+      // Para usuarios no artistas, ocultamos todas las secciones de contenido artístico
+      this.$sectionPopulares.hidden = true
+      this.$sectionCanciones.hidden = true
+      this.$sectionAlbumes.hidden = true
+      this.$sectionMerch.hidden = true
+    }
 
     // Socials with icons (Bootstrap Icons + custom SVG)
     this.$socials.innerHTML = ''
@@ -213,8 +253,8 @@ export default class ArtistaView extends EventEmitter {
     
     const TIKTOK_SVG = '<svg width="16" height="16" fill="currentColor" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16.656 1.029c1.637-0.025 3.262-0.012 4.886-0.025 0.054 2.031 0.878 3.859 2.189 5.213l-0.002-0.002c1.411 1.271 3.247 2.095 5.271 2.235l0.028 0.002v5.036c-1.912-0.048-3.71-0.489-5.331-1.247l0.082 0.034c-0.784-0.377-1.447-0.764-2.077-1.196l0.052 0.034c-0.012 3.649 0.012 7.298-0.025 10.934-0.103 1.853-0.719 3.543-1.707 4.954l0.020-0.031c-1.652 2.366-4.328 3.919-7.371 4.011l-0.014 0c-0.123 0.006-0.268 0.009-0.414 0.009-1.73 0-3.347-0.482-4.725-1.319l0.040 0.023c-2.508-1.509-4.238-4.091-4.558-7.094l-0.004-0.041c-0.025-0.625-0.037-1.25-0.012-1.862 0.49-4.779 4.494-8.476 9.361-8.476 0.547 0 1.083 0.047 1.604 0.136l-0.056-0.008c0.025 1.849-0.050 3.699-0.050 5.548-0.423-0.153-0.911-0.242-1.42-0.242-1.868 0-3.457 1.194-4.045 2.861l-0.009 0.030c-0.133 0.427-0.21 0.918-0.21 1.426 0 0.206 0.013 0.41 0.037 0.61l-0.002-0.024c0.332 2.046 2.086 3.59 4.201 3.59 0.061 0 0.121-0.001 0.181-0.004l-0.009 0c1.463-0.044 2.733-0.831 3.451-1.994l0.010-0.018c0.267-0.372 0.45-0.822 0.511-1.311l0.001-0.014c0.125-2.237 0.075-4.461 0.087-6.698 0.012-5.036-0.012-10.060 0.025-15.083z"></path></svg>'
     
-    if (artist.enlaces) {
-      for (const [key, url] of Object.entries(artist.enlaces)) {
+    if (usuario.enlaces) {
+      for (const [key, url] of Object.entries(usuario.enlaces)) {
         const a = document.createElement('a')
         a.href = url
         a.target = '_blank'
@@ -234,10 +274,15 @@ export default class ArtistaView extends EventEmitter {
       }
     }
 
+    // Solo renderizamos contenido de artista si isArtist es true
+    if (!isArtist) {
+      return
+    }
+
     // Populares
     this.$popular.innerHTML = ''
-    if (artist.populares && artist.populares.length) {
-      artist.populares.forEach(p => {
+    if (usuario.populares && usuario.populares.length) {
+      usuario.populares.forEach(p => {
         const div = document.createElement('div')
         div.className = 'list-group-item d-flex gap-3 align-items-center'
         div.innerHTML = `
@@ -281,37 +326,41 @@ export default class ArtistaView extends EventEmitter {
       })
     }
 
-    renderCards(this.$songs, artist.canciones, 'cancion')
-    renderCards(this.$albums, artist.albumes, 'album')
-    renderCards(this.$merch, artist.productos, 'producto')
+    renderCards(this.$songs, usuario.canciones, 'cancion')
+    renderCards(this.$albums, usuario.albumes, 'album')
+    renderCards(this.$merch, usuario.productos, 'producto')
   }
 
   setFollowState(followed) {
+    if (!this.$follow) return
     this.$follow.textContent = followed ? 'Siguiendo' : 'Seguir'
     this.$follow.classList.toggle('btn-outline-success', followed)
     this.$follow.classList.toggle('btn-success', !followed)
   }
 
-  toggleMoreInfo(show) {
-    if (typeof show === 'boolean') {
-      this.$more.hidden = !show
-      return
-    }
-    this.$more.hidden = !this.$more.hidden
-  }
-
-  setEditMode(editMode, visibilitySettings = null) {
+  setEditMode(editMode, usuario = null, isArtist = false, visibilitySettings = null) {
     if (!this.$editPanel) return
     
     this.$editPanel.hidden = !editMode
     
-    if (editMode && visibilitySettings) {
-      // Sincronizar checkboxes con configuración actual
-      this.$checkPopulares.checked = visibilitySettings.showPopulares
-      this.$checkCanciones.checked = visibilitySettings.showCanciones
-      this.$checkAlbumes.checked = visibilitySettings.showAlbumes
-      this.$checkMerch.checked = visibilitySettings.showMerch
-      this.$checkMoreInfo.checked = visibilitySettings.showMoreInfo
+    if (editMode && usuario) {
+      // Rellenar formulario con datos actuales
+      this.$editNombre.value = usuario.nombre || ''
+      this.$editDescripcion.value = usuario.descripcion || ''
+      this.$editCorreo.value = usuario.correo || ''
+      
+      // Mostrar sección de visibilidad solo para artistas
+      if (this.$artistVisibilitySection) {
+        this.$artistVisibilitySection.hidden = !isArtist
+      }
+      
+      // Sincronizar checkboxes con configuración actual (solo artistas)
+      if (isArtist && visibilitySettings) {
+        this.$checkPopulares.checked = visibilitySettings.showPopulares
+        this.$checkCanciones.checked = visibilitySettings.showCanciones
+        this.$checkAlbumes.checked = visibilitySettings.showAlbumes
+        this.$checkMerch.checked = visibilitySettings.showMerch
+      }
     }
   }
 }
