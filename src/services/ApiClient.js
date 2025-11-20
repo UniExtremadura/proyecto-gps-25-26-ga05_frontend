@@ -1,6 +1,7 @@
 // Cliente de API sencillo para microservicios "Contenido" y "Usuarios".
 const CONTENIDO_BASE = 'http://localhost:8081'
 const USUARIOS_BASE = 'http://localhost:8082'
+const ESTADISTICAS_BASE = 'http://localhost:8083'
 
 function getAuthToken() {
   try {
@@ -138,5 +139,20 @@ export default {
   // Información pública del artista
   async getArtist(idArtista) {
     return http(USUARIOS_BASE, `/artistas/${idArtista}`, withAuth())
+  },
+
+  async getHistorialCompras(usuarioId) {
+    return http(ESTADISTICAS_BASE, `/usuarios/${usuarioId}/historialCompras`, withAuth())
+  },
+
+  async getAlbum(id) {
+    const res = await http(CONTENIDO_BASE, `/albums/${id}`, withAuth())
+    return res?.album || null
+  },
+
+  async getMerch(id) {
+    const res = await http(CONTENIDO_BASE, `/merch/${id}`, withAuth())
+    return res?.merch || null
   }
+
 }

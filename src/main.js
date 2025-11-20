@@ -33,6 +33,12 @@ import CommunityView from './views/CommunityView.js'
 import CommunityController from './controllers/CommunityController.js'
 import ApiClient from './services/ApiClient.js'
 
+// Historial de compras
+import PurchaseHistoryModel from './models/PurchaseHistoryModel.js'
+import PurchaseHistoryView from './views/PurchaseHistoryView.js'
+import PurchaseHistoryController from './controllers/PurchaseHistoryController.js'
+
+
 // Router simple
 class Router {
 	constructor() {
@@ -40,7 +46,8 @@ class Router {
 			'/': () => mountExample(),
 			'/login': () => mountLogin(),
 			'/register': () => mountRegister(),
-			'/noticias': () => mountAllNews()
+			'/noticias': () => mountAllNews(),
+			'/historialCompras': () => mountHistorialCompras()
 		}
 		this.init()
 	}
@@ -178,6 +185,28 @@ const mountCommunity = async (idComunidad) => {
 	}
 }
 
+const mountHistorialCompras = () => {
+  const root = document.getElementById('app')
+  if (!root) return
+
+  root.innerHTML = ''
+
+  const user = JSON.parse(localStorage.getItem('authUser') || 'null')
+  if (!user?.id) {
+    // No hay usuario logueado, redirigir al login
+    router.navigate('/login')
+    return
+  }
+
+  const model = new PurchaseHistoryModel()
+  const view = new PurchaseHistoryView(root)
+  const controller = new PurchaseHistoryController(model, view, user.id)
+}
+
+
+
+
+
 // Inicializar router
 const router = new Router()
 
@@ -231,6 +260,7 @@ const renderAuthArea = () => {
 				<ul class="dropdown-menu dropdown-menu-end">
 					<li><h6 class="dropdown-header">${user.correo || ''}</h6></li>
 					<li><a class="dropdown-item" href="#" id="nav-profile">Perfil</a></li>
+					<li><a class="dropdown-item" href="/historialCompras" data-link id="nav-purchase-history">Historial de compras</a></li>
 					<li><hr class="dropdown-divider"></li>
 					<li><a class="dropdown-item text-danger" href="#" id="nav-logout">Cerrar sesión</a></li>
 				</ul>
