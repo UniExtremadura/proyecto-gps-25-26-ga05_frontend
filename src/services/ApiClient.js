@@ -205,6 +205,14 @@ export default {
     const res = await http(CONTENIDO_BASE, `/merch/${id}`, withAuth())
     return res?.merch || null
   },
+
+  async disminuirStockMerch(id, cantidad = 1) {
+    return http(CONTENIDO_BASE, `/merch/${id}/disminuirStockMerch`, withAuth({
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cantidad })
+    }))
+  },
 	
   // Función auxiliar para convertir File a ArrayBuffer (bytes)
   async fileToArrayBuffer(file) {

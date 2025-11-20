@@ -91,11 +91,14 @@ class Router {
 	route() {
 		const path = window.location.pathname
 		const noticiaMatch = path.match(/^\/noticias\/(\d+)$/)
+		const merchMatch = path.match(/^\/merch\/(\d+)$/)
 		const comunidadMatch = path.match(/^\/comunidades\/(\d+)$/)
 		const usuarioMatch = path.match(/^\/usuario\/(\d+)(\/owner)?$/)
 		
 		if (noticiaMatch) {
 			mountNoticia(noticiaMatch[1])
+		} else if (merchMatch) {
+			mountMerchDetail(merchMatch[1])
 		} else if (comunidadMatch) {
 			mountCommunity(comunidadMatch[1])
 		} else if (usuarioMatch) {
@@ -158,7 +161,13 @@ const mountLogin = () => {
 	})
 	controller.on('loggedIn', (result) => {
 		renderAuthArea()
-		router.navigate('/')
+		const redirect = localStorage.getItem('redirectAfterLogin')
+		if (redirect) {
+			localStorage.removeItem('redirectAfterLogin')
+			router.navigate(redirect)
+		} else {
+			router.navigate('/')
+		}
 	})
 }
 
@@ -170,6 +179,34 @@ const mountNoticia = (id) => {
 	const model = new NoticiaModel()
 	const view = new NoticiaView(root)
 	const controller = new NoticiaController(model, view, id)
+}
+
+const mountMerchDetail = async (id) => {
+	const root = document.getElementById('app')
+	if (!root) return
+
+	root.innerHTML = ''
+	const model = new (await import('./models/MerchDetailModel.js')).default()
+	const view = new (await import('./views/MerchDetailView.js')).default(root)
+	const controller = new (await import('./controllers/MerchDetailController.js')).default(model, view, Number(id))
+
+	// Manejar evento comprar desde el controller
+	controller.on('comprar', async () => {
+		const user = JSON.parse(localStorage.getItem('authUser') || 'null')
+		if (!user || !user.id) {
+			// Guardar redirección y llevar a login
+			localStorage.setItem('redirectAfterLogin', `/merch/${id}`)
+			router.navigate('/login')
+			return
+		}
+
+		try {
+			await model.comprar(Number(id), 1)
+			view.showMessage('Compra realizada correctamente', 'success')
+		} catch (err) {
+			view.showError(err.message || 'Error al comprar')
+		}
+	})
 }
 
 const mountAllNews = () => {
