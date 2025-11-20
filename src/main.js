@@ -48,12 +48,16 @@ import ApiClient from './services/ApiClient.js'
 import PurchaseHistoryModel from './models/PurchaseHistoryModel.js'
 import PurchaseHistoryView from './views/PurchaseHistoryView.js'
 import PurchaseHistoryController from './controllers/PurchaseHistoryController.js'
+import MerchModel from './models/MerchModel.js'
+import MerchView from './views/MerchView.js'
+import MerchController from './controllers/MerchController.js'
 
 
 // Router simple
 class Router {
 	constructor() {
 		this.routes = {
+			'/merch': mountMerch,
 			'/': mountExample,
 			'/login': mountLogin,
 			'/register': mountRegister,
@@ -182,6 +186,21 @@ const mountAllNews = () => {
   })
 }
 
+const mountMerch = () => {
+	const root = document.getElementById('app')
+	if (!root) return
+
+	root.innerHTML = ''
+	const model = new MerchModel()
+	const view = new MerchView(root)
+	const controller = new MerchController(model, view)
+
+	controller.on('verMerch', (id) => {
+		// Navegar a detalle de merch si se implementa
+		router.navigate(`/merch/${id}`)
+	})
+}
+
 const mountUsuario = (userId, isOwner = false) => {
 	const root = document.getElementById('app')
 	if (!root) return
@@ -299,6 +318,18 @@ const setupNavigation = () => {
 	newsNavLink?.addEventListener('click', (e) => {
 		e.preventDefault()
 		router.navigate('/noticias')
+	})
+
+	const merchNavLink = document.getElementById('merch-nav-link')
+	merchNavLink?.addEventListener('click', (e) => {
+		e.preventDefault()
+		const user = getAuthUser()
+		if (!user || !user.id) {
+			// No logueado: redirigir a login y opcionalmente mostrar mensaje
+			router.navigate('/login')
+			return
+		}
+		router.navigate('/merch')
 	})
 
 	attachAuthAreaHandlers()

@@ -195,6 +195,12 @@ export default {
     return res?.album || null
   },
 
+  async getMerchs() {
+    // Lista todos los productos de merchandising
+    const res = await http(CONTENIDO_BASE, '/merch')
+    return res?.merch || res
+  },
+
   async getMerch(id) {
     const res = await http(CONTENIDO_BASE, `/merch/${id}`, withAuth())
     return res?.merch || null
