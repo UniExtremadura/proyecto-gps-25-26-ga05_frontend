@@ -13,19 +13,30 @@ import RegisterController from './controllers/RegisterController.js'
 import RegisterModel from './models/RegisterModel.js'
 import LoginView from './views/LoginView.js'
 import LoginController from './controllers/LoginController.js'
+import ArtistaController from './controllers/artistaController.js'
 
 // Funcionalidad de búsqueda
 import SearchModel from './models/SearchModel.js'
 import SearchView from './views/SearchView.js'
 import SearchController from './controllers/SearchController.js'
 
-//Noticias
+// Noticias
 import NoticiaView from './views/NoticiaView.js'
 import AllNewsView from './views/AllNewsView.js'
 import NoticiaModel from './models/NoticiaModel.js'
 import AllNewsModel from './models/AllNewsModel.js'
 import NoticiaController from './controllers/NoticiaController.js'
 import AllNewsController from './controllers/AllNewsController.js'
+
+// Subir álbumes
+import UploadAlbumModel from './models/UploadAlbumModel.js'
+import UploadAlbumView from './views/UploadAlbumView.js'
+import UploadAlbumController from './controllers/UploadAlbumController.js'
+
+// Crear noticias (admin)
+import UploadNoticiaModel from './models/UploadNoticiaModel.js'
+import UploadNoticiaView from './views/UploadNoticiaView.js'
+import UploadNoticiaController from './controllers/UploadNoticiaController.js'
 
 // Comunidad de artista
 import CommunityModel from './models/CommunityModel.js'
@@ -43,10 +54,13 @@ import PurchaseHistoryController from './controllers/PurchaseHistoryController.j
 class Router {
 	constructor() {
 		this.routes = {
-			'/': () => mountExample(),
-			'/login': () => mountLogin(),
-			'/register': () => mountRegister(),
-			'/noticias': () => mountAllNews(),
+			'/': mountExample,
+			'/login': mountLogin,
+			'/register': mountRegister,
+			'/noticias': mountAllNews,
+			'/noticias/:id': mountNoticia,
+			'/upload-album': mountUploadAlbum,
+			'/upload-noticia': mountUploadNoticia,
 			'/historialCompras': () => mountHistorialCompras()
 		}
 		this.init()
@@ -74,10 +88,16 @@ class Router {
 		const path = window.location.pathname
 		const noticiaMatch = path.match(/^\/noticias\/(\d+)$/)
 		const comunidadMatch = path.match(/^\/comunidades\/(\d+)$/)
+		const usuarioMatch = path.match(/^\/usuario\/(\d+)(\/owner)?$/)
+		
 		if (noticiaMatch) {
 			mountNoticia(noticiaMatch[1])
 		} else if (comunidadMatch) {
 			mountCommunity(comunidadMatch[1])
+		} else if (usuarioMatch) {
+			const userId = parseInt(usuarioMatch[1], 10)
+			const isOwner = !!usuarioMatch[2]
+			mountUsuario(userId, isOwner)
 		} else if (path === '/noticias') {
 			mountAllNews()
 		} else {
@@ -162,6 +182,15 @@ const mountAllNews = () => {
   })
 }
 
+const mountUsuario = (userId, isOwner = false) => {
+	const root = document.getElementById('app')
+	if (!root) return
+	
+	root.innerHTML = ''
+	// eslint-disable-next-line no-unused-vars
+	const controller = new ArtistaController(root, userId, isOwner)
+}
+
 const mountCommunity = async (idComunidad) => {
 	const root = document.getElementById('app')
 	if (!root) return
@@ -203,9 +232,63 @@ const mountHistorialCompras = () => {
   const controller = new PurchaseHistoryController(model, view, user.id)
 }
 
+const mountUploadAlbum = () => {
+  const root = document.getElementById('app')
+  if (!root) return
+  
+  root.innerHTML = ''
+  
+  const currentUser = JSON.parse(localStorage.getItem('authUser') || 'null')
+  if (!currentUser || currentUser.tipo !== 2) {
+    root.innerHTML = `
+      <div class="container py-5">
+        <div class="alert alert-warning text-center">
+          <h4>Acceso restringido</h4>
+          <p>Debes ser un artista para acceder a esta sección.</p>
+          <a href="/" class="btn btn-primary" data-link>Volver al inicio</a>
+        </div>
+      </div>
+    `
+    return
+  }
+  
+  const model = new UploadAlbumModel()
+  const view = new UploadAlbumView(root)
+  const controller = new UploadAlbumController(model, view)
 
+  controller.on('cancelar', () => {
+    router.navigate('/')
+  })
+}
 
+const mountUploadNoticia = () => {
+	const root = document.getElementById('app')
+	if (!root) return
 
+	root.innerHTML = ''
+
+	const currentUser = JSON.parse(localStorage.getItem('authUser') || 'null')
+	if (!currentUser || currentUser.tipo !== 1) {
+		root.innerHTML = `
+			<div class="container py-5">
+				<div class="alert alert-warning text-center">
+					<h4>Acceso restringido</h4>
+					<p>Debes ser administrador para crear noticias.</p>
+					<a href="/" class="btn btn-primary" data-link>Volver al inicio</a>
+				</div>
+			</div>
+		`
+		return
+	}
+
+	const model = new UploadNoticiaModel()
+	const view = new UploadNoticiaView(root)
+	const controller = new UploadNoticiaController(model, view)
+
+	controller.on('cancelar', () => {
+		router.navigate('/')
+	})
+}
 
 // Inicializar router
 const router = new Router()
@@ -291,7 +374,10 @@ const attachAuthAreaHandlers = () => {
 	})
 	btnProfile?.addEventListener('click', (e) => {
 		e.preventDefault()
-		// Pendiente: navegar a página de perfil cuando exista
+		const user = getAuthUser()
+		if (user && typeof user.id !== 'undefined') {
+			router.navigate(`/usuario/${user.id}/owner`)
+		}
 	})
 }
 
@@ -311,3 +397,4 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchController = new SearchController(searchModel, searchView)
   }
 })
+

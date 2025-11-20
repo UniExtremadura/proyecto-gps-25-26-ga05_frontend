@@ -7,12 +7,29 @@ export default class NoticiaModel extends EventEmitter {
     this.state = {
       noticia: null,
       loading: true,
-      error: null
+      error: null,
+      deleting: false,
+      deleted: false
     }
   }
 
   getState() {
     return JSON.parse(JSON.stringify(this.state))
+  }
+
+  async eliminarNoticia(id) {
+    try {
+      this.state = { ...this.state, deleting: true, error: null }
+      this.emit('change', this.getState())
+
+      await ApiClient.deleteNoticia(id)
+
+      this.state = { ...this.state, deleting: false, deleted: true }
+      this.emit('change', this.getState())
+    } catch (error) {
+      this.state = { ...this.state, deleting: false, error: error.message || 'Error al eliminar la noticia' }
+      this.emit('change', this.getState())
+    }
   }
 
   async cargarNoticia(id) {

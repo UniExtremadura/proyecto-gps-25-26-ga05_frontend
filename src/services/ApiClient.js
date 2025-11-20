@@ -91,21 +91,32 @@ export default {
     })
   },
 
-	async getNoticias() {
-		return http(CONTENIDO_BASE, '/noticias')
-	},
-
-	async getNoticia(id) {
-		return http(CONTENIDO_BASE, '/noticias/' + id)
-	},
-
-	async getUsuario(id) {
-  return http(USUARIOS_BASE, '/usuarios/' + id, withAuth())
+  async getNoticias() {
+    return http(CONTENIDO_BASE, '/noticias')
   },
 
-  // Comunidad de artista
-  async getCommunityPosts(idComunidad) {
-    return http(USUARIOS_BASE, `/comunidades/${idComunidad}/posts`, withAuth())
+  async getNoticia(id) {
+    return http(CONTENIDO_BASE, '/noticias/' + id)
+  },
+
+  async getUsuario(id) {
+    return http(USUARIOS_BASE, '/usuarios/' + id, withAuth())
+  },
+
+  async getGeneros() {
+    return http(CONTENIDO_BASE, '/generos')
+  },
+
+	async getUsuarios() {
+		return http(USUARIOS_BASE, '/usuarios')
+	},
+
+  async crearAlbum(albumData) {
+    return http(CONTENIDO_BASE, '/albums', withAuth({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(albumData)
+    }))
   },
 
   async createCommunityPost(idComunidad, { comentario, postPadre = null, idUsuario }) {
@@ -118,24 +129,58 @@ export default {
     }))
   },
 
+  async crearCancion(cancionData) {
+    return http(CONTENIDO_BASE, '/canciones', withAuth({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cancionData)
+    }))
+  },
+
+  async crearNoticia(noticiaData) {
+    // noticiaData: { titulo, contenidoHTML, fecha: 'YYYY-MM-DD', autor }
+    return http(CONTENIDO_BASE, '/noticias', withAuth({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(noticiaData)
+    }))
+  },
+
+  async deleteNoticia(id) {
+    return http(CONTENIDO_BASE, `/noticias/${id}`, withAuth({ method: 'DELETE' }))
+  },
+	
   async deleteCommunityPost(idPost) {
     return http(USUARIOS_BASE, `/posts/${idPost}`, withAuth({ method: 'DELETE' }))
   },
 
+  // Función auxiliar para convertir File a Base64
+  async fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => {
+        // Remover el prefijo "data:image/...;base64," para obtener solo los datos base64
+        const base64 = reader.result.split(',')[1]
+        resolve(base64)
+      }
+      reader.onerror = error => reject(error)
+    })
+  },
+	
   async getPost(idPost) {
     return http(USUARIOS_BASE, `/posts/${idPost}`, withAuth())
   },
 
   async getPostReplies(idPost) {
     return http(USUARIOS_BASE, `/posts/${idPost}/respuestas`, withAuth())
-  }
-  ,
+  },
 
   // Comunidad info (para conocer propietario/artista)
   async getCommunity(idComunidad) {
     return http(USUARIOS_BASE, `/comunidades/${idComunidad}`, withAuth())
-  }
-  ,
+  },
+  
   // Información pública del artista
   async getArtist(idArtista) {
     return http(USUARIOS_BASE, `/artistas/${idArtista}`, withAuth())
@@ -153,6 +198,20 @@ export default {
   async getMerch(id) {
     const res = await http(CONTENIDO_BASE, `/merch/${id}`, withAuth())
     return res?.merch || null
+  },
+	
+  // Función auxiliar para convertir File a ArrayBuffer (bytes)
+  async fileToArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsArrayBuffer(file)
+      reader.onload = () => resolve(new Uint8Array(reader.result))
+      reader.onerror = error => reject(error)
+    })
+  },
+
+  async getUsuarios() {
+    return http(USUARIOS_BASE, '/usuarios', withAuth())
   }
 
 }

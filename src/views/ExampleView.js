@@ -11,7 +11,7 @@ export default class ExampleView extends EventEmitter {
 
   _renderShell() {
     this.root.innerHTML = `
-      <!-- Scción de cabecera -->
+      <!-- Sección de cabecera -->
       <section class="hero-section mb-5">
         <div class="bg-dark text-white rounded-3 p-5 position-relative overflow-hidden">
           <div class="position-absolute top-0 end-0 opacity-25">

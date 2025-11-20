@@ -57,6 +57,13 @@ export default class NoticiaView extends EventEmitter {
       return
     }
 
+    const isAdmin = (() => {
+      try {
+        const u = JSON.parse(localStorage.getItem('authUser') || 'null')
+        return u && u.tipo === 1
+      } catch { return false }
+    })()
+
     this.root.innerHTML = `
       <div class="container py-4">
         <!-- Cabecera de la noticia -->
@@ -93,13 +100,17 @@ export default class NoticiaView extends EventEmitter {
 
           <!-- Acciones -->
           <footer class="border-top pt-4 no-print">
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
               <button class="btn btn-outline-primary" id="share-btn">
                 <i class="bi bi-share me-1"></i>Compartir
               </button>
               <button class="btn btn-outline-secondary" id="print-btn">
                 <i class="bi bi-printer me-1"></i>Imprimir
               </button>
+              ${isAdmin ? `
+              <button class="btn btn-outline-danger" id="delete-btn">
+                <i class="bi bi-trash me-1"></i>Eliminar
+              </button>` : ''}
             </div>
           </footer>
         </article>
@@ -114,6 +125,11 @@ export default class NoticiaView extends EventEmitter {
     this.root.querySelector('#print-btn')?.addEventListener('click', () => {
       this._printNoticia()
     })
+
+    const deleteBtn = this.root.querySelector('#delete-btn')
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => this.emit('delete', noticia.id))
+    }
   }
 
   _printNoticia() {
