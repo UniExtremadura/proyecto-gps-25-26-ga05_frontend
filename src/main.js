@@ -163,6 +163,24 @@ const mountCommunity = async (idComunidad) => {
 	}
 }
 
+const mountHistorialCompras = () => {
+  const root = document.getElementById('app')
+  if (!root) return
+
+  root.innerHTML = ''
+
+  const user = JSON.parse(localStorage.getItem('authUser') || 'null')
+  if (!user?.id) {
+    // No hay usuario logueado, redirigir al login
+    router.navigate('/login')
+    return
+  }
+
+  const model = new PurchaseHistoryModel()
+  const view = new PurchaseHistoryView(root)
+  const controller = new PurchaseHistoryController(model, view, user.id)
+}
+
 const mountUploadAlbum = () => {
   const root = document.getElementById('app')
   if (!root) return
@@ -274,6 +292,7 @@ class Router {
             '/explorar/cd': () => this.mountAlbumExplorerWithFormat('3'),
             '/explorar/cassette': () => this.mountAlbumExplorerWithFormat('4'),
 		    '/album/:id': (params) => mountAlbumDetail(params.id)
+			'/historialCompras': () => mountHistorialCompras()
 		}
 		this.init()
 	}
@@ -386,6 +405,7 @@ const renderAuthArea = () => {
 				<ul class="dropdown-menu dropdown-menu-end">
 					<li><h6 class="dropdown-header">${user.correo || ''}</h6></li>
 					<li><a class="dropdown-item" href="#" id="nav-profile">Perfil</a></li>
+					<li><a class="dropdown-item" href="/historialCompras" data-link id="nav-purchase-history">Historial de compras</a></li>
 					<li><hr class="dropdown-divider"></li>
 					<li><a class="dropdown-item text-danger" href="#" id="nav-logout">Cerrar sesión</a></li>
 				</ul>
