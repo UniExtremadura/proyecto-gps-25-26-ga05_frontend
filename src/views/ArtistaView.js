@@ -19,9 +19,14 @@ export default class ArtistaView extends EventEmitter {
   }
 
   _renderShell() {
+    // Comprobar si el usuario autenticado es administrador
     const isAdmin = !!(this.currentUser && this.currentUser.tipo === 1)
+    // Botón de editar solo si es el propietario del perfil
     const editButtonHtml = this.isOwner ? '<button id="editProfileBtn" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i> Editar perfil</button>' : ''
+    // Botón para publicar noticias (visible solo para administradores propietarios)
     const adminNewsButtonHtml = (this.isOwner && isAdmin) ? '<a href="/upload-noticia" data-link class="btn btn-primary btn-sm"><i class="bi bi-newspaper"></i> Publicar noticia</a>' : ''
+    // Botón para administrar usuarios (visible solo cuando el administrador visita su propio perfil)
+    const adminUsersButtonHtml = (this.isOwner && isAdmin) ? '<button id="adminUsersBtn" class="btn btn-outline-primary btn-sm"><i class="bi bi-people"></i> Administrar usuarios</button>' : ''
     
     this.root.innerHTML = `
       <div class="card shadow-sm mb-4">
@@ -42,6 +47,7 @@ export default class ArtistaView extends EventEmitter {
                 ${this.isOwner ? editButtonHtml : '<button id="followBtn" class="btn btn-success btn-sm">Seguir</button>'}
                 <button id="communityBtn" class="btn btn-outline-secondary btn-sm">Comunidad</button>
                 ${adminNewsButtonHtml}
+                ${adminUsersButtonHtml}
               </div>
               <div id="artistSocials" class="d-flex gap-2 flex-wrap mb-3"></div>
               
@@ -140,6 +146,7 @@ export default class ArtistaView extends EventEmitter {
     this.$follow = this.root.querySelector('#followBtn')
     this.$editProfile = this.root.querySelector('#editProfileBtn')
     this.$community = this.root.querySelector('#communityBtn')
+    this.$adminUsers = this.root.querySelector('#adminUsersBtn')
     this.$socials = this.root.querySelector('#artistSocials')
     this.$popular = this.root.querySelector('#popularList')
     this.$songs = this.root.querySelector('#songsCarousel')
@@ -176,6 +183,14 @@ export default class ArtistaView extends EventEmitter {
       this.$editProfile.addEventListener('click', () => this.emit('editProfile'))
     }
     this.$community.addEventListener('click', () => this.emit('goCommunity'))
+
+    // Si existe el botón de administrar usuarios, emitir evento al hacer click
+    if (this.$adminUsers) {
+      this.$adminUsers.addEventListener('click', (e) => {
+        e.preventDefault()
+        this.emit('adminUsers')
+      })
+    }
     
     if (this.$saveProfile) {
       this.$saveProfile.addEventListener('click', () => {

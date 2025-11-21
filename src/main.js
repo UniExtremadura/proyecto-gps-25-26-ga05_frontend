@@ -55,6 +55,7 @@ class Router {
 	constructor() {
 		this.routes = {
 			'/': mountExample,
+			'/admin/users': mountAdminUsers,
 			'/login': mountLogin,
 			'/register': mountRegister,
 			'/noticias': mountAllNews,
@@ -115,6 +116,7 @@ const mountExample = () => {
 	root.innerHTML = ''
 	const model = new ExampleModel()
 	const view = new ExampleView(root)
+	// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
 	// eslint-disable-next-line no-unused-vars
 	const controller = new ExampleController(model, view)
 
@@ -134,7 +136,8 @@ const mountRegister = () => {
   root.innerHTML = ''
   const model = new RegisterModel()
   const view = new RegisterView(root)
-  // eslint-disable-next-line no-unused-vars
+  	// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
+	// eslint-disable-next-line no-unused-vars
 	const controller = new RegisterController(view, model)
 	controller.on('registered', () => {
 		renderAuthArea()
@@ -187,8 +190,42 @@ const mountUsuario = (userId, isOwner = false) => {
 	if (!root) return
 	
 	root.innerHTML = ''
+	// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
 	// eslint-disable-next-line no-unused-vars
 	const controller = new ArtistaController(root, userId, isOwner)
+}
+
+const mountAdminUsers = () => {
+	const root = document.getElementById('app')
+	if (!root) return
+
+	const currentUser = JSON.parse(localStorage.getItem('authUser') || 'null')
+	if (!currentUser || currentUser.tipo !== 1) {
+		root.innerHTML = `
+			<div class="container py-5">
+				<div class="alert alert-warning text-center">
+					<h4>Acceso restringido</h4>
+					<p>Debes ser administrador para acceder a esta sección.</p>
+					<a href="/" class="btn btn-primary" data-link>Volver al inicio</a>
+				</div>
+			</div>
+		`
+		return
+	}
+
+	root.innerHTML = ''
+		// Importar el controlador de forma perezosa para evitar dependencias circulares
+	const AdminUsersController = window.AdminUsersController || null
+	try {
+		// Importación dinámica para mantener pequeño el paquete inicial
+		import('./controllers/AdminUsersController.js').then(mod => {
+			// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
+			// eslint-disable-next-line no-unused-vars
+			const controller = new mod.default(root)
+		})
+	} catch (err) {
+		root.innerHTML = `<div class="container py-5"><div class="alert alert-danger">Error al cargar la vista de administración.</div></div>`
+	}
 }
 
 const mountCommunity = async (idComunidad) => {
@@ -203,6 +240,7 @@ const mountCommunity = async (idComunidad) => {
 		const model = new CommunityModel()
 		const view = new CommunityView(root)
 		if (artist?.nombre) view.setArtistName(String(artist.nombre))
+		// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
 		// eslint-disable-next-line no-unused-vars
 		const controller = new CommunityController(model, view, idComunidad)
 	} catch (err) {
@@ -292,6 +330,7 @@ const mountUploadNoticia = () => {
 
 // Inicializar router
 const router = new Router()
+window.router = router
 
 // Configurar botones con navegación de la barra superior
 const setupNavigation = () => {
@@ -379,6 +418,8 @@ const attachAuthAreaHandlers = () => {
 			router.navigate(`/usuario/${user.id}/owner`)
 		}
 	})
+
+	// Nota: el acceso a administración de usuarios se realiza desde la vista de perfil del administrador
 }
 
 // Inicializar cuando el DOM esté listo
@@ -393,7 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchInput && searchButton) {
     const searchModel = new SearchModel()
     const searchView = new SearchView(searchInput, searchButton)
-    // eslint-disable-next-line no-unused-vars
+    // Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
+	// eslint-disable-next-line no-unused-vars
     const searchController = new SearchController(searchModel, searchView)
   }
 })
