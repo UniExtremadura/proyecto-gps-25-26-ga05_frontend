@@ -197,5 +197,21 @@ export default {
 
   async getUsuarios() {
     return http(USUARIOS_BASE, '/usuarios', withAuth())
+  },
+
+  async buscarContenido(url) {
+	return http(CONTENIDO_BASE, url)
+  },
+
+  async getAlbumDetalle(albumId) {
+	return http(CONTENIDO_BASE, `/albums/${albumId}/detalle`)
+  },
+  
+  getAlbumImageUrl(albumId) {
+    return `${CONTENIDO_BASE}/albums/${albumId}/imagen`
+  },
+  
+  getCancionAudioUrl(cancionId) {
+    return `${CONTENIDO_BASE}/canciones/${cancionId}/archivo`
   }
 }
