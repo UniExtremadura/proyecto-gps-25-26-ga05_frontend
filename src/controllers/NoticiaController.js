@@ -29,6 +29,10 @@ export default class NoticiaController extends EventEmitter {
       this.compartirNoticia(noticia)
     })
 
+    this.view.on('delete', (id) => {
+      this.eliminarNoticia(id)
+    })
+
     // Cargar noticia al inicializar
     this.model.cargarNoticia(this.noticiaId)
   }
@@ -52,6 +56,25 @@ export default class NoticiaController extends EventEmitter {
           // Fallback más básico
           prompt('Comparte esta noticia copiando la URL:', window.location.href)
         })
+    }
+  }
+
+  async eliminarNoticia(id) {
+    // Pre-chequeo de token en cliente para evitar petición inútil
+    let token = ''
+    try { token = localStorage.getItem('authToken') || '' } catch {}
+    if (!token) {
+      alert('Debes iniciar sesión como administrador para eliminar noticias.')
+      return
+    }
+
+    const confirmado = window.confirm('¿Seguro que deseas eliminar esta noticia? Esta acción no se puede deshacer.')
+    if (!confirmado) return
+    await this.model.eliminarNoticia(id)
+    const state = this.model.getState()
+    if (state.deleted) {
+      // Redirigir al listado de noticias
+      window.location.href = '/noticias'
     }
   }
 }
