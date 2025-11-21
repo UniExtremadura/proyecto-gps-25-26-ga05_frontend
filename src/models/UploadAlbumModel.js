@@ -44,6 +44,12 @@ export default class UploadAlbumModel extends EventEmitter {
       if (!albumData.precio || albumData.precio <= 0) {
         throw new Error('El precio del álbum es requerido y debe ser mayor a 0')
       }
+	  
+	  // Asegurar que siempre se use formato Digital (Id 1)
+      const albumDataConFormato = {
+        ...albumData,
+        formato: 1
+      }
 
       // 1. Subir el álbum usando el endpoint POST /albums
       const albumCreado = await ApiClient.crearAlbum(albumData)

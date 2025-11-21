@@ -221,10 +221,26 @@ export default {
     const url = `/usuarios?q=${encodeURIComponent(String(q))}`
     return http(USUARIOS_BASE, url, withAuth())
   },
+  
+  async buscarContenido(url) {
+	return http(CONTENIDO_BASE, url)
+  },
 
   async deleteUsuario(id) {
     if (!id) throw new Error('ID de usuario requerido')
     return http(USUARIOS_BASE, `/usuarios/${id}`, withAuth({ method: 'DELETE' }))
   },
+  
+  async getAlbumDetalle(albumId) {
+	return http(CONTENIDO_BASE, `/albums/${albumId}/detalle`)
+  },
+  
+  getAlbumImageUrl(albumId) {
+    return `${CONTENIDO_BASE}/albums/${albumId}/imagen`
+  },
+  
+  getCancionAudioUrl(cancionId) {
+    return `${CONTENIDO_BASE}/canciones/${cancionId}/archivo`
+  }
 
 }

@@ -62,8 +62,11 @@ export default class UploadAlbumView extends EventEmitter {
             <i class="bi bi-cloud-upload me-3"></i>Subir Álbum
           </h1>
           <p class="lead text-muted">
-            Agrega un nuevo álbum con todas sus canciones a la plataforma.
+            Agrega un nuevo álbum digital con todas sus canciones a la plataforma.
             <span class="badge bg-info ms-2">Artista: ${this.currentUser.nombre}</span>
+            <span class="badge bg-success ms-1">
+              <i class="bi bi-file-music me-1"></i>Formato: Digital
+            </span>
           </p>
         </header>
 
@@ -116,7 +119,17 @@ export default class UploadAlbumView extends EventEmitter {
                                placeholder="9.99" required>
                       </div>
                       <div class="invalid-feedback">El precio debe estar entre 0.50€ y 99.99€</div>
-                      <small class="form-text text-muted">Precio de venta del álbum completo</small>
+                      <small class="form-text text-muted">Precio de venta del álbum completo en formato digital</small>
+                    </div>
+
+                    <!-- Formato (solo Digital, fijo) -->
+                    <div class="mb-3">
+                      <label class="form-label">Formato</label>
+                      <div class="form-control bg-light">
+                        <i class="bi bi-file-music me-2 text-success"></i>
+                        Digital (Descarga)
+                      </div>
+                      <small class="form-text text-muted">Todos los álbumes se publican inicialmente en formato digital.</small>
                     </div>
 
                     <!-- Artista (oculto, se obtiene del usuario logueado) -->
@@ -215,7 +228,7 @@ export default class UploadAlbumView extends EventEmitter {
                     <i class="bi bi-x-circle me-1"></i>Cancelar
                   </button>
                   <button type="submit" class="btn btn-primary" id="subir-btn">
-                    <i class="bi bi-cloud-upload me-1"></i>Subir Álbum
+                    <i class="bi bi-cloud-upload me-1"></i>Subir Álbum Digital
                   </button>
                 </div>
               </div>
@@ -224,6 +237,7 @@ export default class UploadAlbumView extends EventEmitter {
         </div>
       </div>
     `
+
 
     // Referencias a elementos
     this.$loading = this.root.querySelector('#loading-state')
@@ -492,12 +506,14 @@ export default class UploadAlbumView extends EventEmitter {
       const imagenBase64 = await this._fileToBase64(imagenFile)
 
       // El artista se obtiene del usuario logueado automáticamente
+	  // Y el formato siempre será Digital (ID 1)
       const albumData = {
         nombre: nombre,
         precio: precio,
-        artista: this.currentUser.id, // ← Usamos el ID del usuario logueado
+        artista: this.currentUser.id,
         imagen: imagenBase64,
-        fecha: fecha || new Date().toISOString().split('T')[0]
+        fecha: fecha || new Date().toISOString().split('T')[0],
+		formato: 1
       }
 
       if (generoValue) {
