@@ -64,68 +64,6 @@ import MerchModel from './models/MerchModel.js'
 import MerchView from './views/MerchView.js'
 import MerchController from './controllers/MerchController.js'
 
-
-// Router simple
-class Router {
-	constructor() {
-		this.routes = {
-			'/merch': mountMerch,
-			'/': mountExample,
-			'/login': mountLogin,
-			'/register': mountRegister,
-			'/noticias': mountAllNews,
-			'/noticias/:id': mountNoticia,
-			'/upload-album': mountUploadAlbum,
-			'/upload-noticia': mountUploadNoticia,
-			'/historialCompras': () => mountHistorialCompras()
-		}
-		this.init()
-	}
-
-	init() {
-		window.addEventListener('popstate', () => this.route())
-
-		document.addEventListener('click', (e) => {
-			if (e.target.matches('[data-link]')) {
-				e.preventDefault()
-				this.navigate(e.target.getAttribute('href'))
-			}
-		})
-
-		this.route()
-	}
-
-	navigate(path) {
-		window.history.pushState(null, '', path)
-		this.route()
-	}
-
-	route() {
-		const path = window.location.pathname
-		const noticiaMatch = path.match(/^\/noticias\/(\d+)$/)
-		const merchMatch = path.match(/^\/merch\/(\d+)$/)
-		const comunidadMatch = path.match(/^\/comunidades\/(\d+)$/)
-		const usuarioMatch = path.match(/^\/usuario\/(\d+)(\/owner)?$/)
-		
-		if (noticiaMatch) {
-			mountNoticia(noticiaMatch[1])
-		} else if (merchMatch) {
-			mountMerchDetail(merchMatch[1])
-		} else if (comunidadMatch) {
-			mountCommunity(comunidadMatch[1])
-		} else if (usuarioMatch) {
-			const userId = parseInt(usuarioMatch[1], 10)
-			const isOwner = !!usuarioMatch[2]
-			mountUsuario(userId, isOwner)
-		} else if (path === '/noticias') {
-			mountAllNews()
-		} else {
-			const handler = this.routes[path] || this.routes['/']
-			handler()
-		}
-	}
-}
-
 // Funciones de montaje
 const mountExample = () => {
 	const root = document.getElementById('app')
@@ -454,7 +392,9 @@ class Router {
             '/explorar/cd': () => this.mountAlbumExplorerWithFormat('3'),
             '/explorar/cassette': () => this.mountAlbumExplorerWithFormat('4'),
 		    '/album/:id': (params) => mountAlbumDetail(params.id),
-			'/historialCompras': () => mountHistorialCompras()
+			'/historialCompras': () => mountHistorialCompras(),
+			'/merch/:id': () => mountMerchDetail(), 
+			'/merch': mountMerch
 		}
 		this.init()
 	}
@@ -492,6 +432,7 @@ class Router {
 		const comunidadMatch = path.match(/^\/comunidades\/(\d+)$/)
 	    const usuarioMatch = path.match(/^\/usuario\/(\d+)(\/owner)?$/)
 	    const albumMatch = path.match(/^\/album\/(\d+)$/)
+		const merchMatch = path.match(/^\/merch\/(\d+)$/)
 		
 		if (noticiaMatch) {
 			mountNoticia(noticiaMatch[1])
@@ -503,7 +444,9 @@ class Router {
 			mountUsuario(userId, isOwner)
 		} else if (albumMatch) {
 		    mountAlbumDetail(albumMatch[1])
-		} else if (path === '/noticias') {
+		} else if (merchMatch) {
++		    mountMerchDetail(merchMatch[1])
+        } else if (path === '/noticias') {
 			mountAllNews()
 		} else {
 			const handler = this.routes[path] || this.routes['/']
