@@ -42,70 +42,24 @@ import UploadNoticiaController from './controllers/UploadNoticiaController.js'
 import CommunityModel from './models/CommunityModel.js'
 import CommunityView from './views/CommunityView.js'
 import CommunityController from './controllers/CommunityController.js'
+
+// Explorador de álbumes
+import AlbumExplorerModel from './models/AlbumExplorerModel.js'
+import AlbumExplorerView from './views/AlbumExplorerView.js'
+import AlbumExplorerController from './controllers/AlbumExplorerController.js'
+
+// Vista detalle álbum
+import AlbumDetailModel from './models/AlbumDetailModel.js'
+import AlbumDetailView from './views/AlbumDetailView.js'
+import AlbumDetailController from './controllers/AlbumDetailController.js'
+
+// ApiClient
 import ApiClient from './services/ApiClient.js'
 
 // Historial de compras
 import PurchaseHistoryModel from './models/PurchaseHistoryModel.js'
 import PurchaseHistoryView from './views/PurchaseHistoryView.js'
 import PurchaseHistoryController from './controllers/PurchaseHistoryController.js'
-
-
-// Router simple
-class Router {
-	constructor() {
-		this.routes = {
-			'/': mountExample,
-			'/login': mountLogin,
-			'/register': mountRegister,
-			'/noticias': mountAllNews,
-			'/noticias/:id': mountNoticia,
-			'/upload-album': mountUploadAlbum,
-			'/upload-noticia': mountUploadNoticia,
-			'/historialCompras': () => mountHistorialCompras()
-		}
-		this.init()
-	}
-
-	init() {
-		window.addEventListener('popstate', () => this.route())
-
-		document.addEventListener('click', (e) => {
-			if (e.target.matches('[data-link]')) {
-				e.preventDefault()
-				this.navigate(e.target.getAttribute('href'))
-			}
-		})
-
-		this.route()
-	}
-
-	navigate(path) {
-		window.history.pushState(null, '', path)
-		this.route()
-	}
-
-	route() {
-		const path = window.location.pathname
-		const noticiaMatch = path.match(/^\/noticias\/(\d+)$/)
-		const comunidadMatch = path.match(/^\/comunidades\/(\d+)$/)
-		const usuarioMatch = path.match(/^\/usuario\/(\d+)(\/owner)?$/)
-		
-		if (noticiaMatch) {
-			mountNoticia(noticiaMatch[1])
-		} else if (comunidadMatch) {
-			mountCommunity(comunidadMatch[1])
-		} else if (usuarioMatch) {
-			const userId = parseInt(usuarioMatch[1], 10)
-			const isOwner = !!usuarioMatch[2]
-			mountUsuario(userId, isOwner)
-		} else if (path === '/noticias') {
-			mountAllNews()
-		} else {
-			const handler = this.routes[path] || this.routes['/']
-			handler()
-		}
-	}
-}
 
 // Funciones de montaje
 const mountExample = () => {
@@ -115,6 +69,7 @@ const mountExample = () => {
 	root.innerHTML = ''
 	const model = new ExampleModel()
 	const view = new ExampleView(root)
+	// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
 	// eslint-disable-next-line no-unused-vars
 	const controller = new ExampleController(model, view)
 
@@ -134,7 +89,8 @@ const mountRegister = () => {
   root.innerHTML = ''
   const model = new RegisterModel()
   const view = new RegisterView(root)
-  // eslint-disable-next-line no-unused-vars
+  	// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
+	// eslint-disable-next-line no-unused-vars
 	const controller = new RegisterController(view, model)
 	controller.on('registered', () => {
 		renderAuthArea()
@@ -187,8 +143,42 @@ const mountUsuario = (userId, isOwner = false) => {
 	if (!root) return
 	
 	root.innerHTML = ''
+	// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
 	// eslint-disable-next-line no-unused-vars
 	const controller = new ArtistaController(root, userId, isOwner)
+}
+
+const mountAdminUsers = () => {
+	const root = document.getElementById('app')
+	if (!root) return
+
+	const currentUser = JSON.parse(localStorage.getItem('authUser') || 'null')
+	if (!currentUser || currentUser.tipo !== 1) {
+		root.innerHTML = `
+			<div class="container py-5">
+				<div class="alert alert-warning text-center">
+					<h4>Acceso restringido</h4>
+					<p>Debes ser administrador para acceder a esta sección.</p>
+					<a href="/" class="btn btn-primary" data-link>Volver al inicio</a>
+				</div>
+			</div>
+		`
+		return
+	}
+
+	root.innerHTML = ''
+		// Importar el controlador de forma perezosa para evitar dependencias circulares
+	const AdminUsersController = window.AdminUsersController || null
+	try {
+		// Importación dinámica para mantener pequeño el paquete inicial
+		import('./controllers/AdminUsersController.js').then(mod => {
+			// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
+			// eslint-disable-next-line no-unused-vars
+			const controller = new mod.default(root)
+		})
+	} catch (err) {
+		root.innerHTML = `<div class="container py-5"><div class="alert alert-danger">Error al cargar la vista de administración.</div></div>`
+	}
 }
 
 const mountCommunity = async (idComunidad) => {
@@ -203,6 +193,7 @@ const mountCommunity = async (idComunidad) => {
 		const model = new CommunityModel()
 		const view = new CommunityView(root)
 		if (artist?.nombre) view.setArtistName(String(artist.nombre))
+		// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
 		// eslint-disable-next-line no-unused-vars
 		const controller = new CommunityController(model, view, idComunidad)
 	} catch (err) {
@@ -290,8 +281,122 @@ const mountUploadNoticia = () => {
 	})
 }
 
+const mountAlbumExplorer = (routerInstance) => {
+  const root = document.getElementById('app')
+  if (!root) return
+  
+  root.innerHTML = ''
+  const model = new AlbumExplorerModel()
+  const view = new AlbumExplorerView(root)
+  const controller = new AlbumExplorerController(model, view, routerInstance)
+}
+
+const mountAlbumExplorerWithFormat = (formatoId, routerInstance) => {
+  const root = document.getElementById('app')
+  if (!root) return
+  
+  root.innerHTML = ''
+  const model = new AlbumExplorerModel()
+  const view = new AlbumExplorerView(root)
+  const controller = new AlbumExplorerController(model, view, routerInstance)
+  
+  // Aplicar filtro de formato después de que la vista esté renderizada
+  setTimeout(() => {
+    model.setFiltroFormato(formatoId)
+    view.root.querySelector('#format-filter').value = formatoId
+  }, 100)
+}
+
+const mountAlbumDetail = (albumId) => {
+  const root = document.getElementById('app')
+  if (!root) return
+  
+  root.innerHTML = ''
+  const model = new AlbumDetailModel()
+  const view = new AlbumDetailView(root)
+  const controller = new AlbumDetailController(model, view, albumId)
+}
+
+// Router simple
+class Router {
+	constructor() {
+		this.routes = {
+		  	'/': mountExample,
+			'/login': mountLogin,
+			'/register': mountRegister,
+			'/noticias': mountAllNews,
+			'/noticias/:id': mountNoticia,
+			'/upload-album': mountUploadAlbum,
+		    '/upload-noticia': mountUploadNoticia,
+		    '/explorar': () => this.mountAlbumExplorer(),
+            '/explorar/digital': () => this.mountAlbumExplorerWithFormat('1'),
+            '/explorar/vinilo': () => this.mountAlbumExplorerWithFormat('2'),
+            '/explorar/cd': () => this.mountAlbumExplorerWithFormat('3'),
+            '/explorar/cassette': () => this.mountAlbumExplorerWithFormat('4'),
+		    '/album/:id': (params) => mountAlbumDetail(params.id)
+			'/historialCompras': () => mountHistorialCompras()
+		}
+		this.init()
+	}
+
+	// Métodos auxiliares para las rutas que necesitan router
+	mountAlbumExplorer() {
+		mountAlbumExplorer(this)
+	}
+
+	mountAlbumExplorerWithFormat(formatoId) {
+		mountAlbumExplorerWithFormat(formatoId, this)
+	}
+
+	init() {
+		window.addEventListener('popstate', () => this.route())
+
+		document.addEventListener('click', (e) => {
+			if (e.target.matches('[data-link]')) {
+				e.preventDefault()
+				this.navigate(e.target.getAttribute('href'))
+			}
+		})
+
+		this.route()
+	}
+
+	navigate(path) {
+		window.history.pushState(null, '', path)
+		this.route()
+	}
+
+	route() {
+		const path = window.location.pathname
+		const noticiaMatch = path.match(/^\/noticias\/(\d+)$/)
+		const comunidadMatch = path.match(/^\/comunidades\/(\d+)$/)
+	    const usuarioMatch = path.match(/^\/usuario\/(\d+)(\/owner)?$/)
+	    const albumMatch = path.match(/^\/album\/(\d+)$/)
+		
+		if (noticiaMatch) {
+			mountNoticia(noticiaMatch[1])
+		} else if (comunidadMatch) {
+			mountCommunity(comunidadMatch[1])
+		} else if (usuarioMatch) {
+			const userId = parseInt(usuarioMatch[1], 10)
+			const isOwner = !!usuarioMatch[2]
+			mountUsuario(userId, isOwner)
+		} else if (albumMatch) {
+		    mountAlbumDetail(albumMatch[1])
+		} else if (path === '/noticias') {
+			mountAllNews()
+		} else {
+			const handler = this.routes[path] || this.routes['/']
+			if (typeof handler === 'function') {
+				handler()
+			}
+		}
+	}
+}
+
 // Inicializar router
 const router = new Router()
+window.router = router
 
 // Configurar botones con navegación de la barra superior
 const setupNavigation = () => {
@@ -379,6 +484,8 @@ const attachAuthAreaHandlers = () => {
 			router.navigate(`/usuario/${user.id}/owner`)
 		}
 	})
+
+	// Nota: el acceso a administración de usuarios se realiza desde la vista de perfil del administrador
 }
 
 // Inicializar cuando el DOM esté listo
@@ -393,7 +500,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchInput && searchButton) {
     const searchModel = new SearchModel()
     const searchView = new SearchView(searchInput, searchButton)
-    // eslint-disable-next-line no-unused-vars
+    // Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
+	// eslint-disable-next-line no-unused-vars
     const searchController = new SearchController(searchModel, searchView)
   }
 })

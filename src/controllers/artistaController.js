@@ -27,9 +27,20 @@ export default class ArtistaController {
     this.view.on('editProfile', () => this.toggleEditMode())
     this.view.on('saveProfile', (profileData) => this.saveProfile(profileData))
     this.view.on('cancelEdit', () => this.toggleEditMode())
+    // Evento para navegar a la sección de administración de usuarios
+    this.view.on('adminUsers', () => this.openAdminUsers())
 
     // Inicializar
     this.init()
+  }
+
+  // Navegar a la ruta de administración de usuarios (solo accesible para administradores)
+  openAdminUsers() {
+    if (window.router) {
+      window.router.navigate('/admin/users')
+    } else {
+      window.location.href = '/admin/users'
+    }
   }
 
   async init() {
