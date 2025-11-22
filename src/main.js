@@ -171,11 +171,16 @@ const mountAdminUsers = () => {
 	const AdminUsersController = window.AdminUsersController || null
 	try {
 		// Importación dinámica para mantener pequeño el paquete inicial
-		import('./controllers/AdminUsersController.js').then(mod => {
-			// Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
-			// eslint-disable-next-line no-unused-vars
-			const controller = new mod.default(root)
-		})
+		import('./controllers/AdminUsersController.js')
+        .then(mod => {
+            // Nota: la siguiente línea desactiva temporalmente la regla ESLint 'no-unused-vars'.
+            // eslint-disable-next-line no-unused-vars
+        	const controller = new mod.default(root)
+        })
+        .catch(err => {
+            console.error('Error cargando AdminUsersController:', err)
+            root.innerHTML = `<div class="container py-5"><div class="alert alert-danger">Error al cargar la vista de administración. Inténtalo de nuevo más tarde.</div></div>`
+        })
 	} catch (err) {
 		root.innerHTML = `<div class="container py-5"><div class="alert alert-danger">Error al cargar la vista de administración.</div></div>`
 	}
@@ -324,6 +329,7 @@ class Router {
 		  	'/': mountExample,
 			'/login': mountLogin,
 			'/register': mountRegister,
+			'/admin/users': mountAdminUsers,
 			'/noticias': mountAllNews,
 			'/noticias/:id': mountNoticia,
 			'/upload-album': mountUploadAlbum,
