@@ -44,6 +44,28 @@ export default class AlbumExplorerController extends EventEmitter {
       this.router.navigate(`/album/${albumId}`)
     })
 
+  this.view.on('toggleFavoritoAlbum', async (albumId) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('authUser') || 'null')
+      if (!user?.id) throw new Error("Debes iniciar sesión")
+
+      const albumIdNum = Number(albumId)  // <-- convertir a número
+      const album = this.model.state.albumes.find(a => a.id === albumIdNum)
+      if (!album) return
+
+      if (album.favorito) {
+        await this.model.removeFavorito(user.id, albumIdNum)
+        this.model.marcarFavoritoLocal(albumIdNum, false)
+      } else {
+        await this.model.addFavorito(user.id, albumIdNum)
+        this.model.marcarFavoritoLocal(albumIdNum, true)
+      }
+    } catch (err) {
+      console.error(err)
+      this.view.showError("Error gestionando favoritos")
+    }
+  })
+
     this._inicializar()
   }
 

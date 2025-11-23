@@ -163,8 +163,13 @@ export default class AlbumExplorerView extends EventEmitter {
                  class="card-img-top" 
                  alt="${album.nombre}" 
                  style="height: 200px; object-fit: cover;">
-            <div class="position-absolute top-0 end-0 m-2">
+            <div class="position-absolute top-0 end-0 m-2 d-flex flex-column align-items-end gap-2">
               <span class="badge bg-primary">$${album.precio}</span>
+              <button class="btn btn-light p-1 rounded-circle shadow-sm favorite-btn"
+                  data-album-id="${album.id}"
+                  title="${album.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}">
+                  <i class="bi fs-5 ${album.favorito ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
+              </button>
             </div>
           </div>
 
@@ -205,6 +210,14 @@ export default class AlbumExplorerView extends EventEmitter {
       card.addEventListener('click', () => {
         const albumId = card.getAttribute('data-album-id')
         this.emit('verAlbumDetalle', albumId)
+      })
+    })
+
+    this.$albumsGrid.querySelectorAll('.favorite-btn').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+      event.stopPropagation()
+      const albumId = btn.getAttribute('data-album-id')
+      this.emit('toggleFavoritoAlbum', albumId)
       })
     })
   }

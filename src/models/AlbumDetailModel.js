@@ -7,7 +7,9 @@ export default class AlbumDetailModel extends EventEmitter {
     this.state = {
       album: null,
       loading: true,
-      error: null
+      error: null,
+      favoritosCanciones: [],
+      favoritoArtista: false
     }
   }
 
@@ -40,12 +42,52 @@ export default class AlbumDetailModel extends EventEmitter {
   }
 
   async reproducirCancion(cancionId) {
+    this.emit('reproducirCancion', cancionId)
+  }
+
+  async cargarFavoritos(userId) {
     try {
-      // Esta función podría manejar la lógica de reproducción
-      // Por ahora solo emitimos el evento
-      this.emit('reproducirCancion', cancionId)
+      // Cargar favoritos de canciones
+      const favCancionesResp = await ApiClient.getFavoritosCanciones(userId)
+      const favCancionesIds = Array.isArray(favCancionesResp?.favoritos)
+        ? favCancionesResp.favoritos.map(f => Number(f.idCancion))
+        : []
+
+      this.state.favoritosCanciones = favCancionesIds
+
+      if (this.state.album?.canciones) {
+        this.state.album.canciones = this.state.album.canciones.map(c => ({
+          ...c,
+          favorito: favCancionesIds.includes(Number(c.id))
+        }))
+      }
+
+      // Cargar favoritos de artistas
+      const favArtistasResp = await ApiClient.getFavoritosArtistas(userId)
+      const favArtistasIds = Array.isArray(favArtistasResp?.favoritos)
+        ? favArtistasResp.favoritos.map(f => Number(f.idArtista))
+        : []
+
+      const artistaId = this.state.album?.artista
+      this.state.favoritoArtista = favArtistasIds.includes(artistaId)
+
+      this.emit('change', this.getState())
     } catch (error) {
-      console.error('Error al reproducir canción:', error)
+      console.error('Error al cargar favoritos:', error)
     }
+  }
+
+
+  marcarFavoritoCancion(cancionId, valor) {
+    if (!this.state.album?.canciones) return
+    this.state.album.canciones = this.state.album.canciones.map(c =>
+      c.id === cancionId ? { ...c, favorito: valor } : c
+    )
+    this.emit('change', this.getState())
+  }
+
+  marcarFavoritoArtista(valor) {
+    this.state.favoritoArtista = valor
+    this.emit('change', this.getState())
   }
 }

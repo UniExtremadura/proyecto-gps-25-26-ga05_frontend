@@ -38,11 +38,9 @@ export default class AlbumDetailView extends EventEmitter {
 
         <div id="album-content" class="d-none">
           <div class="row">
-            <!-- Portada y info principal -->
             <div class="col-md-4 mb-4">
               <div class="card border-0 shadow-sm">
                 <div id="album-image-container" class="card-img-container">
-                  <!-- La imagen se cargará dinámicamente -->
                   <div class="placeholder-image bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
                     <i class="bi bi-disc display-1 text-muted"></i>
                   </div>
@@ -59,7 +57,6 @@ export default class AlbumDetailView extends EventEmitter {
               </div>
             </div>
 
-            <!-- Detalles y lista de canciones -->
             <div class="col-md-8">
               <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white">
@@ -68,13 +65,10 @@ export default class AlbumDetailView extends EventEmitter {
                   </h3>
                 </div>
                 <div class="card-body p-0">
-                  <div id="songs-list" class="list-group list-group-flush">
-                    <!-- Las canciones se cargarán dinámicamente -->
-                  </div>
+                  <div id="songs-list" class="list-group list-group-flush"></div>
                 </div>
               </div>
 
-              <!-- Información adicional -->
               <div class="row mt-4">
                 <div class="col-md-6">
                   <div class="card border-0 shadow-sm">
@@ -102,7 +96,6 @@ export default class AlbumDetailView extends EventEmitter {
           </div>
         </div>
 
-        <!-- Reproductor de audio oculto -->
         <audio id="audio-player" class="d-none" controls>
           Tu navegador no soporta el elemento de audio.
         </audio>
@@ -142,41 +135,45 @@ export default class AlbumDetailView extends EventEmitter {
     this.$albumContent.classList.remove('d-none')
 
     if (state.album) {
-      this._renderAlbum(state.album)
+      this._renderAlbum(state.album, state.favoritoArtista)
     }
   }
 
-  _renderAlbum(album) {
-    // Información principal
+  _renderAlbum(album, favoritoArtista = false) {
     this.root.querySelector('#album-title').textContent = album.nombre
-    this.root.querySelector('#album-artist').textContent = album.nombreArtista
+
+    const $artistContainer = this.root.querySelector('#album-artist')
+    $artistContainer.innerHTML = `
+      ${album.nombreArtista}
+      <button class="btn btn-sm btn-outline-danger ms-2 favorite-artist-btn" title="${favoritoArtista ? 'Quitar de favoritos' : 'Agregar a favoritos'}">
+        <i class="bi ${favoritoArtista ? 'bi-heart-fill' : 'bi-heart'}"></i>
+      </button>
+    `
+    $artistContainer.querySelector('.favorite-artist-btn').addEventListener('click', (e) => {
+      e.stopPropagation()
+      // ✅ Aquí pasamos el ID correcto
+      this.emit('toggleFavoritoArtista', album.artista)
+    })
+
     this.root.querySelector('#album-price').textContent = album.precio
     this.root.querySelector('#album-duration').textContent = album.duracion
     this.root.querySelector('#album-date').textContent = new Date(album.fecha).toLocaleDateString('es-ES')
     this.root.querySelector('#album-genre').textContent = album.genero?.nombre || 'No especificado'
 
-    // Imagen del álbum
     const $imageContainer = this.root.querySelector('#album-image-container')
-
-    // Limpiar el contenedor
-    $imageContainer.innerHTML = '';
-  
+    $imageContainer.innerHTML = ''
     const img = document.createElement('img')
-    img.src = ApiClient.getAlbumImageUrl(album.id) // Usar ApiClient aquí
+    img.src = ApiClient.getAlbumImageUrl(album.id)
     img.className = 'card-img-top'
     img.alt = album.nombre
     img.style.height = '300px'
     img.style.objectFit = 'cover'
     img.style.borderRadius = '0.375rem 0.375rem 0 0'
-  
     img.onerror = () => {
       img.style.display = 'none'
-      this._mostrarPlaceholder($imageContainer)
     }
-    
     $imageContainer.appendChild(img)
-    
-    // Lista de canciones
+
     this._renderCanciones(album.canciones)
   }
 
@@ -190,24 +187,35 @@ export default class AlbumDetailView extends EventEmitter {
             <small class="text-muted">${cancion.duracion}</small>
           </div>
         </div>
-        <button class="btn btn-outline-primary btn-sm play-btn" data-song-id="${cancion.id}">
-          <i class="bi bi-play-fill"></i> Reproducir
-        </button>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-outline-primary btn-sm play-btn" data-song-id="${cancion.id}">
+            <i class="bi bi-play-fill"></i> Reproducir
+          </button>
+          <button class="btn btn-sm btn-outline-danger favorite-song-btn" data-song-id="${cancion.id}" title="${cancion.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}">
+            <i class="bi ${cancion.favorito ? 'bi-heart-fill' : 'bi-heart'}"></i>
+          </button>
+        </div>
       </div>
     `).join('')
 
-    // Agregar event listeners a los botones de reproducción
     this.$songsList.querySelectorAll('.play-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation()
-        const songId = btn.getAttribute('data-song-id')
+        const songId = Number(btn.getAttribute('data-song-id'))
         this.emit('reproducirCancion', songId)
+      })
+    })
+
+    this.$songsList.querySelectorAll('.favorite-song-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const songId = Number(btn.getAttribute('data-song-id'))
+        this.emit('toggleFavoritoCancion', songId)
       })
     })
   }
 
   reproducirCancion(cancionId, audioUrl) {
-    // Actualizar estado visual de los botones
     this.$songsList.querySelectorAll('.play-btn').forEach(btn => {
       btn.classList.remove('btn-primary')
       btn.classList.add('btn-outline-primary')
@@ -221,13 +229,9 @@ export default class AlbumDetailView extends EventEmitter {
       currentBtn.innerHTML = '<i class="bi bi-pause-fill"></i> Pausar'
     }
 
-    // Configurar y reproducir audio
     this.$audioPlayer.src = audioUrl
-    this.$audioPlayer.play().catch(error => {
-      console.error('Error al reproducir audio:', error)
-    })
+    this.$audioPlayer.play().catch(error => console.error('Error al reproducir audio:', error))
 
-    // Manejar evento de fin de reproducción
     this.$audioPlayer.onended = () => {
       if (currentBtn) {
         currentBtn.classList.remove('btn-primary')
@@ -239,8 +243,6 @@ export default class AlbumDetailView extends EventEmitter {
 
   pausarCancion() {
     this.$audioPlayer.pause()
-    
-    // Restaurar todos los botones a estado inicial
     this.$songsList.querySelectorAll('.play-btn').forEach(btn => {
       btn.classList.remove('btn-primary')
       btn.classList.add('btn-outline-primary')

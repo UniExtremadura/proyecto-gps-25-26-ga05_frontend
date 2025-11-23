@@ -62,6 +62,19 @@ export default class AlbumExplorerModel extends EventEmitter {
       }
       this.emit('change', this.getState())
     }
+
+    const user = JSON.parse(localStorage.getItem('authUser') || 'null')
+    let favoritosIds = []
+    if (user?.id) {
+      const res = await this.getFavoritos(user.id)
+      favoritosIds = res
+    }
+
+    this.state.albumes = this.state.albumes.map(album => ({
+      ...album,
+      favorito: favoritosIds.includes(album.id)
+    }))
+    this.emit('change', this.getState())
   }
 
   setFiltroFormato(formato) {
@@ -95,4 +108,25 @@ export default class AlbumExplorerModel extends EventEmitter {
       return []
     }
   }
+
+  async getFavoritos(userId) {
+    const res = await ApiClient.getFavoritosAlbum(userId)
+    return res?.favoritos?.map(f => f.idAlbum) || []
+  }
+
+  async addFavorito(userId, albumId) {
+    await ApiClient.addAlbumFavorito(userId, albumId)
+  }
+
+  async removeFavorito(userId, albumId) {
+    await ApiClient.removeAlbumFavorito(userId, albumId)
+  }
+
+  marcarFavoritoLocal(albumId, valor) {
+  this.state.albumes = this.state.albumes.map(album => 
+    album.id === albumId ? { ...album, favorito: valor } : album
+  )
+  this.emit("change", this.getState())
+}
+
 }
