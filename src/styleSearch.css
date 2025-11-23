@@ -1,0 +1,103 @@
+/* Estilos para la barra de búsqueda y resultados */
+
+/* Dropdown de búsqueda */
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 60px; /* Dejar espacio para el botón */
+  margin-top: 0.5rem;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+/* Item individual del dropdown */
+.search-dropdown-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f3f5;
+  transition: background-color 0.15s ease;
+}
+
+.search-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.search-dropdown-item.clickable {
+  cursor: pointer;
+}
+
+.search-dropdown-item.clickable:hover {
+  background-color: #f8f9fa;
+}
+
+.search-dropdown-item.loading,
+.search-dropdown-item.error,
+.search-dropdown-item.empty {
+  color: #6c757d;
+  text-align: center;
+}
+
+.search-dropdown-item.error {
+  color: #dc3545;
+}
+
+/* Título de grupo en el dropdown */
+.search-dropdown-group-title {
+  padding: 0.5rem 1rem;
+  background-color: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Scrollbar personalizada para el dropdown */
+.search-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.search-dropdown::-webkit-scrollbar-track {
+  background: #f1f3f5;
+  border-radius: 0 0.375rem 0.375rem 0;
+}
+
+.search-dropdown::-webkit-scrollbar-thumb {
+  background: #adb5bd;
+  border-radius: 4px;
+}
+
+.search-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #868e96;
+}
+
+/* Animación de entrada */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-dropdown {
+  animation: slideDown 0.2s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .search-dropdown {
+    right: 0;
+    left: -50%;
+    width: 300px;
+  }
+}
