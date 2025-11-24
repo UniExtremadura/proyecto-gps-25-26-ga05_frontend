@@ -145,7 +145,17 @@ export default class ArtistaController {
   }
 
   openCommunity() {
-    if (!this.usuario || !this.usuario.comunidadUrl) return
-    window.open(this.usuario.comunidadUrl, '_blank', 'noopener')
+    if (!this.usuario) return
+    // Determinar id de comunidad: puede venir en varios campos o ser el id del artista
+    const communityId = this.usuario.comunidadId || this.usuario.idComunidad || this.usuario.id || this.userId
+    if (!communityId) return
+    const path = `/comunidades/${communityId}`
+    if (window.router && typeof window.router.navigate === 'function') {
+      // Navegar dentro de la SPA
+      window.router.navigate(path)
+    } else {
+      // Fallback: navegar mediante location (causa recarga)
+      window.location.href = path
+    }
   }
 }

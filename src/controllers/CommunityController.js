@@ -54,11 +54,7 @@ export default class CommunityController extends EventEmitter {
   }
 
   async initPermissions(ownerFlag) {
-    // Si viene marcado en la URL como propietario, permite borrar
-    if (ownerFlag) {
-      this.view.allowDelete = true
-      return true
-    }
+    // Nota: no usamos ownerFlag para permitir borrado; solo administradores pueden borrar
     // Intentar obtener info de la comunidad para verificar propietario
     try {
       const info = await this.model.getCommunityInfo(this.idComunidad).catch(() => null)
@@ -78,8 +74,9 @@ export default class CommunityController extends EventEmitter {
       }
       if (name) this.view.setArtistName(String(name))
 
-      // 2) Permisos: solo el artista propietario puede borrar
-      const canDelete = !!(this.userId && ownerId && Number(this.userId) === Number(ownerId))
+      // 2) Permisos: solo el administrador puede borrar
+      const isAdmin = !!(this.currentUser && (this.currentUser.tipo === 1 || String(this.currentUser.role || '').toLowerCase().includes('admin')))
+      const canDelete = isAdmin
       this.view.allowDelete = canDelete
       // Si no hay ownerId ni nombre y tampoco artista válido, bloquear acceso (solo artistas tienen comunidad)
       if (!ownerId && !name) {
