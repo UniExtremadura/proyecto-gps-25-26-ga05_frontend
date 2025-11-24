@@ -36,6 +36,10 @@ export default class AlbumDetailController extends EventEmitter {
       await this._toggleFavoritoArtista(artistaId)
     })
 
+	this.view.on('shareAlbum', () => {
+	  this.compartirAlbum()
+	})
+
     this._inicializar()
   }
 
@@ -105,6 +109,26 @@ export default class AlbumDetailController extends EventEmitter {
       console.error(error)
       this.view.showError && this.view.showError("Error gestionando favoritos del artista")
     }
+  }
+
+  compartirAlbum() {
+	if (!this.model.state.album) return
+
+	const album = this.model.state.album
+	const shareData = {
+		title: album.nombre,
+		text: `Mira el álbum "${album.nombre}" de ${album.nombreArtista}`,
+		url: window.location.href
+	}
+
+	if (navigator.share) {
+		navigator.share(shareData).catch(console.error)
+	} else {
+		// Fallback: copiar al portapapeles
+		navigator.clipboard.writeText(window.location.href).then(() => {
+		alert('Enlace copiado al portapapeles')
+		}).catch(console.error)
+	}
   }
 
   destroy() {

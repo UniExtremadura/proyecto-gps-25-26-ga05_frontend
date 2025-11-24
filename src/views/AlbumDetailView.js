@@ -52,6 +52,9 @@ export default class AlbumDetailView extends EventEmitter {
                     <button class="btn btn-primary btn-lg">
                       <i class="bi bi-cart me-2"></i>Comprar - $<span id="album-price"></span>
                     </button>
+					<button class="btn btn-outline-primary" id="share-album-btn">
+						<i class="bi bi-share me-1"></i>Compartir álbum
+					</button>
                   </div>
                 </div>
               </div>
@@ -112,6 +115,11 @@ export default class AlbumDetailView extends EventEmitter {
     this.root.querySelector('#retry-btn').addEventListener('click', () => {
       this.emit('reintentar')
     })
+
+    this.root.querySelector('#share-album-btn')?.addEventListener('click', () => {
+      this.emit('shareAlbum')
+    })
+
   }
 
   render(state) {
@@ -151,7 +159,6 @@ export default class AlbumDetailView extends EventEmitter {
     `
     $artistContainer.querySelector('.favorite-artist-btn').addEventListener('click', (e) => {
       e.stopPropagation()
-      // ✅ Aquí pasamos el ID correcto
       this.emit('toggleFavoritoArtista', album.artista)
     })
 
@@ -175,6 +182,7 @@ export default class AlbumDetailView extends EventEmitter {
     $imageContainer.appendChild(img)
 
     this._renderCanciones(album.canciones)
+	this.currentAlbum = album
   }
 
   _renderCanciones(canciones) {
@@ -248,5 +256,24 @@ export default class AlbumDetailView extends EventEmitter {
       btn.classList.add('btn-outline-primary')
       btn.innerHTML = '<i class="bi bi-play-fill"></i> Reproducir'
     })
+  }
+
+  shareAlbum() {
+    if (!this.currentAlbum) return
+  
+    const shareData = {
+      title: this.currentAlbum.nombre,
+      text: `Mira el álbum "${this.currentAlbum.nombre}" de ${this.currentAlbum.nombreArtista}`,
+      url: window.location.href
+    }
+
+    if (navigator.share) {
+      navigator.share(shareData).catch(console.error)
+    } else {
+      // Fallback: copiar al portapapeles
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        alert('Enlace copiado al portapapeles')
+      }).catch(console.error)
+    }
   }
 }
