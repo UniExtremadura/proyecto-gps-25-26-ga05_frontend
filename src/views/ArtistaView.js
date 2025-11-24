@@ -21,8 +21,12 @@ export default class ArtistaView extends EventEmitter {
   _renderShell() {
     // Comprobar si el usuario autenticado es administrador
     const isAdmin = !!(this.currentUser && this.currentUser.tipo === 1)
+    // Comprobar si el usuario autenticado es artista (propietario-artista podrá subir álbumes)
+    const isCurrentArtist = !!(this.currentUser && this.currentUser.tipo === 2)
     // Botón de editar solo si es el propietario del perfil
     const editButtonHtml = this.isOwner ? '<button id="editProfileBtn" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i> Editar perfil</button>' : ''
+    // Botón para subir álbum (visible solo para el artista propietario)
+    const uploadAlbumButtonHtml = (this.isOwner && isCurrentArtist) ? '<a href="/upload-album" data-link class="btn btn-success btn-sm"><i class="bi bi-cloud-upload"></i> Subir álbum</a>' : ''
     // Botón para publicar noticias (visible solo para administradores propietarios)
     const adminNewsButtonHtml = (this.isOwner && isAdmin) ? '<a href="/upload-noticia" data-link class="btn btn-primary btn-sm"><i class="bi bi-newspaper"></i> Publicar noticia</a>' : ''
     // Botón para administrar usuarios (visible solo cuando el administrador visita su propio perfil)
@@ -45,7 +49,8 @@ export default class ArtistaView extends EventEmitter {
               </div>
               <div class="d-flex gap-2 mb-2">
                 ${this.isOwner ? editButtonHtml : '<button id="followBtn" class="btn btn-success btn-sm">Seguir</button>'}
-                <button id="communityBtn" class="btn btn-outline-secondary btn-sm">Comunidad</button>
+                ${uploadAlbumButtonHtml}
+                <button id="communityBtn" class="btn btn-outline-secondary btn-sm" hidden>Comunidad</button>
                 ${adminNewsButtonHtml}
                 ${adminUsersButtonHtml}
               </div>
@@ -87,10 +92,7 @@ export default class ArtistaView extends EventEmitter {
             <hr class="my-3">
             <h6 class="mb-2"><i class="bi bi-gear"></i> Configurar visibilidad del perfil</h6>
             <p class="text-muted small mb-2">Selecciona qué secciones quieres mostrar en tu perfil público</p>
-            <div class="form-check mb-2">
-              <input class="form-check-input" type="checkbox" id="checkPopulares" checked>
-              <label class="form-check-label" for="checkPopulares">Mostrar sección Populares</label>
-            </div>
+            <!-- Checkbox 'Populares' eliminado -->
             <div class="form-check mb-2">
               <input class="form-check-input" type="checkbox" id="checkCanciones" checked>
               <label class="form-check-label" for="checkCanciones">Mostrar sección Canciones</label>
@@ -108,17 +110,6 @@ export default class ArtistaView extends EventEmitter {
           <div class="d-flex gap-2 mt-3">
             <button id="saveProfileBtn" class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar cambios</button>
             <button id="cancelEditBtn" class="btn btn-secondary">Cancelar</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-12 mb-3" id="sectionPopulares">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Populares</h5>
-              <div id="popularList" class="list-group list-group-flush"></div>
-            </div>
           </div>
         </div>
       </div>
@@ -148,7 +139,6 @@ export default class ArtistaView extends EventEmitter {
     this.$community = this.root.querySelector('#communityBtn')
     this.$adminUsers = this.root.querySelector('#adminUsersBtn')
     this.$socials = this.root.querySelector('#artistSocials')
-    this.$popular = this.root.querySelector('#popularList')
     this.$songs = this.root.querySelector('#songsCarousel')
     this.$albums = this.root.querySelector('#albumsCarousel')
     this.$merch = this.root.querySelector('#merchCarousel')
@@ -162,7 +152,6 @@ export default class ArtistaView extends EventEmitter {
     this.$editDescripcion = this.root.querySelector('#editDescripcion')
     this.$editCorreo = this.root.querySelector('#editCorreo')
     this.$artistVisibilitySection = this.root.querySelector('#artistVisibilitySection')
-    this.$checkPopulares = this.root.querySelector('#checkPopulares')
     this.$checkCanciones = this.root.querySelector('#checkCanciones')
     this.$checkAlbumes = this.root.querySelector('#checkAlbumes')
     this.$checkMerch = this.root.querySelector('#checkMerch')
@@ -170,7 +159,6 @@ export default class ArtistaView extends EventEmitter {
     this.$cancelEdit = this.root.querySelector('#cancelEditBtn')
     
     // Secciones
-    this.$sectionPopulares = this.root.querySelector('#sectionPopulares')
     this.$sectionCanciones = this.root.querySelector('#sectionCanciones')
     this.$sectionAlbumes = this.root.querySelector('#sectionAlbumes')
     this.$sectionMerch = this.root.querySelector('#sectionMerch')
@@ -203,7 +191,6 @@ export default class ArtistaView extends EventEmitter {
         // Solo incluir settings de visibilidad si es artista
         if (!this.$artistVisibilitySection.hidden) {
           profileData.visibilitySettings = {
-            showPopulares: this.$checkPopulares.checked,
             showCanciones: this.$checkCanciones.checked,
             showAlbumes: this.$checkAlbumes.checked,
             showMerch: this.$checkMerch.checked
@@ -224,7 +211,6 @@ export default class ArtistaView extends EventEmitter {
     
   // Valores por defecto
     const visibility = {
-      showPopulares: true,
       showCanciones: true,
       showAlbumes: true,
       showMerch: true,
@@ -243,6 +229,9 @@ export default class ArtistaView extends EventEmitter {
     
     // Mostrar solo el correo (información pública no intrusiva)
     this.$email.textContent = usuario.correo || ''
+
+    // Mostrar el botón Comunidad solo si el perfil es de un artista
+    if (this.$community) this.$community.hidden = !isArtist
     
     // Si es artista, mostramos oyentes mensuales
     if (isArtist) {
@@ -255,13 +244,11 @@ export default class ArtistaView extends EventEmitter {
     
     // Aplicar visibilidad (solo para artistas)
     if (isArtist) {
-      this.$sectionPopulares.hidden = !visibility.showPopulares
       this.$sectionCanciones.hidden = !visibility.showCanciones
       this.$sectionAlbumes.hidden = !visibility.showAlbumes
       this.$sectionMerch.hidden = !visibility.showMerch
     } else {
       // Para usuarios no artistas, ocultamos todas las secciones de contenido artístico
-      this.$sectionPopulares.hidden = true
       this.$sectionCanciones.hidden = true
       this.$sectionAlbumes.hidden = true
       this.$sectionMerch.hidden = true
@@ -306,29 +293,20 @@ export default class ArtistaView extends EventEmitter {
       return
     }
 
-    // Populares
-    this.$popular.innerHTML = ''
-    if (usuario.populares && usuario.populares.length) {
-      usuario.populares.forEach(p => {
-        const div = document.createElement('div')
-        div.className = 'list-group-item d-flex gap-3 align-items-center'
-        div.innerHTML = `
-          <img src="${p.portada || '/public/default-profile.png'}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:6px">
-          <div>
-            <div class="fw-bold">${p.titulo}</div>
-            <div class="text-muted small">${p.tipo}${p.anio ? ' · ' + p.anio : ''}</div>
-          </div>
-        `
-        this.$popular.appendChild(div)
-      })
-    } else {
-      const li = document.createElement('div')
-      li.className = 'list-group-item text-muted'
-      li.textContent = 'Sin elementos populares'
-      this.$popular.appendChild(li)
+    // Sección Populares eliminada en vista de perfil
+
+    // Helper para formatear precios y renderizar tarjetas en carrusel
+    const formatPrice = (p) => {
+      if (p == null || p === '') return ''
+      const num = Number(p)
+      if (!Number.isFinite(num)) return String(p) + ' €'
+      try {
+        return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(num)
+      } catch {
+        return num.toFixed(2) + ' €'
+      }
     }
 
-    // Helper para renderizar tarjetas en carrusel
     const renderCards = (container, items, type) => {
       container.innerHTML = ''
       if (!items || items.length === 0) {
@@ -342,11 +320,19 @@ export default class ArtistaView extends EventEmitter {
         const card = document.createElement('div')
         card.className = 'card'
         card.style.minWidth = '180px'
+        const imgSrc = item.portada || item.imagen || '/public/default-profile.png'
+        const title = item.titulo || item.nombre || item.title || ''
+        let meta = ''
+        if (item.precio != null && item.precio !== '') {
+          meta = formatPrice(item.precio)
+        } else {
+          meta = item.anio || item.duracion || ''
+        }
         card.innerHTML = `
-          <img src="${item.portada || item.imagen || '/public/default-profile.png'}" class="card-img-top" style="height:120px;object-fit:cover" alt="">
+          <img src="${imgSrc}" class="card-img-top" style="height:120px;object-fit:cover" alt="">
           <div class="card-body p-2">
-            <div class="card-title small fw-bold">${item.titulo || item.nombre || item.nombre}</div>
-            <div class="card-text small text-muted">${item.anio || item.precio || item.duracion || ''}</div>
+            <div class="card-title small fw-bold">${title}</div>
+            <div class="card-text small text-muted">${meta}</div>
           </div>
         `
         container.appendChild(card)
@@ -383,7 +369,6 @@ export default class ArtistaView extends EventEmitter {
       
       // Sincronizar checkboxes con configuración actual (solo artistas)
       if (isArtist && visibilitySettings) {
-        this.$checkPopulares.checked = visibilitySettings.showPopulares
         this.$checkCanciones.checked = visibilitySettings.showCanciones
         this.$checkAlbumes.checked = visibilitySettings.showAlbumes
         this.$checkMerch.checked = visibilitySettings.showMerch

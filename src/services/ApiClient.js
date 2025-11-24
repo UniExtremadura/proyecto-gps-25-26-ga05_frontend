@@ -180,6 +180,10 @@ export default {
   async getCommunity(idComunidad) {
     return http(USUARIOS_BASE, `/comunidades/${idComunidad}`, withAuth())
   },
+
+  async getCommunityPosts(idComunidad) {
+    return http(USUARIOS_BASE, `/comunidades/${idComunidad}/posts`, withAuth())
+  },
   
   // Información pública del artista
   async getArtist(idArtista) {
