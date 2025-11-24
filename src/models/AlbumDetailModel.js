@@ -32,10 +32,18 @@ export default class AlbumDetailModel extends EventEmitter {
       
       this.emit('change', this.getState())
     } catch (error) {
+      console.error('Error al consultar el álbum:', error)
+      const errorMsg = error.message || 'Error al cargar el álbum'
+      
+      // Si el error es de SQL, mostrar mensaje más claro
+      const displayError = errorMsg.includes('does not exist') 
+        ? 'El álbum no está disponible actualmente' 
+        : errorMsg
+      
       this.state = {
         ...this.state,
         loading: false,
-        error: error.message
+        error: displayError
       }
       this.emit('change', this.getState())
     }

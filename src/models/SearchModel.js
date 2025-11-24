@@ -1,5 +1,6 @@
 // Modelo: gestiona el estado de búsqueda y consultas al backend
 import EventEmitter from '../core/EventEmitter.js'
+import ApiClient from '../services/ApiClient.js'
 
 export default class SearchModel extends EventEmitter {
   constructor() {
@@ -19,7 +20,6 @@ export default class SearchModel extends EventEmitter {
   }
 
   setQuery(query) {
-    console.log('🔍 SearchModel: setQuery llamado con:', query)
     this.state = { ...this.state, query, error: null }
     this.emit('change', this.getState())
     
@@ -29,7 +29,6 @@ export default class SearchModel extends EventEmitter {
     }
     
     if (query.trim().length >= 2) {
-      console.log('⏱️ SearchModel: Iniciando búsqueda con debounce...')
       this.debounceTimer = setTimeout(() => {
         this.search(query)
       }, 300)
@@ -52,16 +51,17 @@ export default class SearchModel extends EventEmitter {
       return
     }
 
-    console.log('🔎 SearchModel: Buscando:', query)
     this.state = { ...this.state, isLoading: true, error: null }
     this.emit('change', this.getState())
 
     try {
-      // Simulación de llamada a API - Reemplazar con URL real del backend
-      const results = await this.mockApiSearch(query, this.state.selectedCategory)
+      const params = new URLSearchParams()
+      params.append('q', query)
       
-      console.log('✅ SearchModel: Resultados encontrados:', results.length)
-      console.table(results)
+      const response = await ApiClient.buscarContenido(`/busqueda?${params.toString()}`)
+      
+      // Procesar resultados según la estructura de la API
+      const results = this.processApiResults(response)
       
       this.state = {
         ...this.state,
@@ -70,7 +70,6 @@ export default class SearchModel extends EventEmitter {
       }
       this.emit('change', this.getState())
     } catch (error) {
-      console.error('❌ SearchModel: Error en búsqueda:', error)
       this.state = {
         ...this.state,
         isLoading: false,
@@ -90,68 +89,91 @@ export default class SearchModel extends EventEmitter {
     this.emit('change', this.getState())
   }
 
-  // Simulación de API - Reemplazar con llamada real al backend
-  async mockApiSearch(query, category) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockData = {
-          artists: [
-            { id: 1, type: 'artist', name: 'The Beatles', image: '🎤', followers: '50M' },
-            { id: 2, type: 'artist', name: 'Pink Floyd', image: '🎤', followers: '30M' },
-            { id: 3, type: 'artist', name: 'Radiohead', image: '🎤', followers: '20M' }
-          ],
-          songs: [
-            { id: 1, type: 'song', name: 'Bohemian Rhapsody', artist: 'Queen', duration: '5:55' },
-            { id: 2, type: 'song', name: 'Stairway to Heaven', artist: 'Led Zeppelin', duration: '8:02' },
-            { id: 3, type: 'song', name: 'Hotel California', artist: 'Eagles', duration: '6:30' }
-          ],
-          albums: [
-            { id: 1, type: 'album', name: 'Abbey Road', artist: 'The Beatles', year: 1969 },
-            { id: 2, type: 'album', name: 'Dark Side of the Moon', artist: 'Pink Floyd', year: 1973 },
-            { id: 3, type: 'album', name: 'OK Computer', artist: 'Radiohead', year: 1997 }
-          ],
-          products: [
-            { id: 1, type: 'product', name: 'Abbey Road - Vinilo', price: '29.99€', format: 'Vinilo' },
-            { id: 2, type: 'product', name: 'The Beatles - Camiseta', price: '19.99€', format: 'Merch' },
-            { id: 3, type: 'product', name: 'Dark Side of the Moon - CD', price: '14.99€', format: 'CD' }
-          ]
+  // Procesar resultados de la API para normalizar el formato
+  processApiResults(response) {
+    const results = []
+    
+    if (!response || !response.data || !response.data.results) {
+      return results
+    }
+    
+    const { results: apiResults } = response.data
+    
+    // Procesar artistas
+    if (apiResults.artistas && Array.isArray(apiResults.artistas) && apiResults.artistas.length > 0) {
+      apiResults.artistas.forEach(artista => {
+        const albums = artista.albums_count || 0
+        const songs = artista.songs_count || 0
+        const merch = artista.merch_count || 0
+        const totalContent = albums + songs + merch
+        
+        let info = 'Artista'
+        if (totalContent > 0) {
+          const parts = []
+          if (albums > 0) parts.push(`${albums} ${albums === 1 ? 'álbum' : 'álbumes'}`)
+          if (songs > 0) parts.push(`${songs} ${songs === 1 ? 'canción' : 'canciones'}`)
+          if (merch > 0) parts.push(`${merch} producto${merch === 1 ? '' : 's'}`)
+          info = parts.join(', ')
         }
-
-        let results = []
-        const lowerQuery = query.toLowerCase()
-
-        if (category === 'all' || category === 'artists') {
-          const filtered = mockData.artists.filter(item => 
-            item.name.toLowerCase().includes(lowerQuery)
-          )
-          results = [...results, ...filtered]
+        
+        results.push({
+          id: artista.id,
+          type: 'artist',
+          name: artista.nombre,
+          image: '🎤',
+          info: info
+        })
+      })
+    }
+    
+    // Procesar canciones
+    if (apiResults.canciones && Array.isArray(apiResults.canciones) && apiResults.canciones.length > 0) {
+      apiResults.canciones.forEach(cancion => {
+        // Formatear duración de segundos a mm:ss
+        let durationFormatted = ''
+        if (cancion.duracion) {
+          const minutes = Math.floor(cancion.duracion / 60)
+          const seconds = cancion.duracion % 60
+          durationFormatted = `${minutes}:${seconds.toString().padStart(2, '0')}`
         }
-
-        if (category === 'all' || category === 'songs') {
-          const filtered = mockData.songs.filter(item => 
-            item.name.toLowerCase().includes(lowerQuery) ||
-            item.artist.toLowerCase().includes(lowerQuery)
-          )
-          results = [...results, ...filtered]
-        }
-
-        if (category === 'all' || category === 'albums') {
-          const filtered = mockData.albums.filter(item => 
-            item.name.toLowerCase().includes(lowerQuery) ||
-            item.artist.toLowerCase().includes(lowerQuery)
-          )
-          results = [...results, ...filtered]
-        }
-
-        if (category === 'all' || category === 'products') {
-          const filtered = mockData.products.filter(item => 
-            item.name.toLowerCase().includes(lowerQuery)
-          )
-          results = [...results, ...filtered]
-        }
-
-        resolve(results)
-      }, 400) // Simula latencia de red
-    })
+        
+        results.push({
+          id: cancion.id,
+          type: 'song',
+          name: cancion.nombre,
+          artist: cancion.nombreArtista || cancion.artista || 'Artista desconocido',
+          duration: durationFormatted,
+          albumId: cancion.album // Guardar el ID del álbum para navegación
+        })
+      })
+    }
+    
+    // Procesar álbumes
+    if (apiResults.albumes && Array.isArray(apiResults.albumes) && apiResults.albumes.length > 0) {
+      apiResults.albumes.forEach(album => {
+        results.push({
+          id: album.id,
+          type: 'album',
+          name: album.titulo,
+          artist: album.nombreArtista || album.artista || '',
+          year: album.fechaPublicacion ? new Date(album.fechaPublicacion).getFullYear() : ''
+        })
+      })
+    }
+    
+    // Procesar merchandising
+    if (apiResults.merch && Array.isArray(apiResults.merch) && apiResults.merch.length > 0) {
+      apiResults.merch.forEach(merch => {
+        results.push({
+          id: merch.id,
+          type: 'product',
+          name: merch.nombre,
+          price: `${merch.precio}€`,
+          format: 'Merch'
+        })
+      })
+    }
+    
+    return results
   }
 }
