@@ -113,7 +113,6 @@ export default class MerchView extends EventEmitter {
         </article>
       </div>
     `).join('')
-
     // Event binding: solo el botón "Ver"
     this.$merchGrid.querySelectorAll('button[data-action="ver"]').forEach(btn => {
       btn.addEventListener('click', () => {

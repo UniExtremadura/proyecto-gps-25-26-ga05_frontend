@@ -210,6 +210,12 @@ export default {
     return res?.merch || null
   },
 
+  async deleteMerch(id) {
+    if (!id) throw new Error('ID de merch requerido')
+    return http(CONTENIDO_BASE, `/merch/${id}`, withAuth({ method: 'DELETE' }))
+  },
+  
+
   async disminuirStockMerch(id, cantidad = 1) {
     return http(CONTENIDO_BASE, `/merch/${id}/disminuirStockMerch`, withAuth({
       method: 'PATCH',

@@ -21,6 +21,7 @@ export default class ArtistaView extends EventEmitter {
   _renderShell() {
     // Comprobar si el usuario autenticado es administrador
     const isAdmin = !!(this.currentUser && this.currentUser.tipo === 1)
+
     // Comprobar si el usuario autenticado es artista (propietario-artista podrá subir álbumes)
     const isCurrentArtist = !!(this.currentUser && this.currentUser.tipo === 2)
     // Botón de editar solo si es el propietario del perfil
