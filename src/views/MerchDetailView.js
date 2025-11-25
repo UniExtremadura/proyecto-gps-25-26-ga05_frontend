@@ -1,4 +1,5 @@
 import EventEmitter from '../core/EventEmitter.js'
+import ApiClient from '../services/ApiClient.js'
 
 export default class MerchDetailView extends EventEmitter {
   constructor(rootEl) {
@@ -51,6 +52,7 @@ export default class MerchDetailView extends EventEmitter {
               </div>
 
               <a href="/merch" data-link class="btn btn-outline-secondary mt-3">Volver</a>
+              <button id="btn-borrar-merch" class="btn btn-danger mt-3 ms-2" hidden>Borrar producto</button>
 
               <div id="message-area" class="mt-3"></div>
             </div>
@@ -78,6 +80,8 @@ export default class MerchDetailView extends EventEmitter {
     // Botón pagar
     this.$btnPagar = this.root.querySelector("#btn-pagar")
 
+    this.$btnBorrar = this.root.querySelector('#btn-borrar-merch')
+
     // Evento pagar
     this.$btnPagar.addEventListener("click", () => {
       this.emit("pagar", {
@@ -89,6 +93,31 @@ export default class MerchDetailView extends EventEmitter {
         }
       })
     })
+
+    // Borrar (solo administradores)
+    const currentUser = JSON.parse(localStorage.getItem('authUser') || 'null')
+    const isAdmin = !!(currentUser && currentUser.tipo === 1)
+    if (this.$btnBorrar) {
+      this.$btnBorrar.hidden = !isAdmin
+      this.$btnBorrar.addEventListener('click', async () => {
+        const ok = confirm('¿Eliminar este producto de merchandising? Esta acción no se puede deshacer.')
+        if (!ok) return
+        // Obtenemos id del merch desde dataset o desde el name text si fuera necesario
+        const id = this.$name.dataset?.id || this.$btnBorrar.dataset?.id || null
+        if (!id) {
+          // Emitir sin id para que el controlador intente realizar acción con el estado actual
+          this.emit('borrarMerch')
+          return
+        }
+        try {
+          await ApiClient.deleteMerch(id)
+          this.emit('merchDeleted', id)
+        } catch (err) {
+          console.error('Error al eliminar merch:', err)
+          this.showError('Error al eliminar el producto: ' + (err.message || err))
+        }
+      })
+    }
   }
 
   render(state) {
@@ -118,6 +147,11 @@ export default class MerchDetailView extends EventEmitter {
     this.$image.src = merch.imagenUrl || ''
     this.$image.alt = merch.nombre || 'Producto'
     this.$name.textContent = merch.nombre || ''
+    // Guardar id en dataset para acciones como borrar
+    if (merch.id || merch.Id || merch.merchId) {
+      this.$name.dataset.id = merch.id || merch.Id || merch.merchId
+      if (this.$btnBorrar) this.$btnBorrar.dataset.id = merch.id || merch.Id || merch.merchId
+    }
     this.$price.textContent = merch.precioFormateado || merch.precio || ''
     this.$stock.textContent = merch.stock ?? '-'
     this.$desc.textContent = merch.descripcion || ''
