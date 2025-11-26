@@ -16,13 +16,19 @@ export default class ExampleController extends EventEmitter {
       this.model.cargarNoticias()
     })
 
-	  this.view.on('verNoticia', (id) => {
-		  this.emit('verNoticia', id)
-      })
+    this.view.on('verNoticia', (id) => {
+      this.emit('verNoticia', id)
+    })
 
-	  this.view.on('verTodasNoticias', () => {
-		  this.emit('verTodasNoticias')
-      })
+    this.view.on('verTodasNoticias', () => {
+      this.emit('verTodasNoticias')
+    })
+
+    this.view.on('navigateToAlbum', (albumId) => {
+      if (window.router) {
+        window.router.navigate(`/album/${albumId}`)
+      }
+    })
 
     // Cargar noticias al inicializar
     this.model.cargarNoticias()

@@ -1,6 +1,7 @@
 // Controlador de registro: valida datos y notifica resultado
 import EventEmitter from '../core/EventEmitter.js'
 import ApiClient from '../services/ApiClient.js'
+import { getTokenExpirySeconds } from '../services/Auth.js'
 
 export default class RegisterController extends EventEmitter {
   constructor(view, model) {
@@ -53,6 +54,11 @@ export default class RegisterController extends EventEmitter {
       if (result && result.token) {
         try {
           localStorage.setItem('authToken', result.token)
+          // Guardar expiración del token para comprobaciones rápidas
+          try {
+            const exp = getTokenExpirySeconds(result.token)
+            if (exp) localStorage.setItem('authTokenExp', String(exp))
+          } catch {}
           const userPayload = { id: result.id, nombre: result.nombre, correo: result.correo, tipo: result.tipo }
           localStorage.setItem('authUser', JSON.stringify(userPayload))
           // Eliminamos cualquier resto previo de authUserId

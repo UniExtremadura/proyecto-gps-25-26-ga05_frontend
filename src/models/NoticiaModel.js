@@ -43,11 +43,10 @@ export default class NoticiaModel extends EventEmitter {
         throw new Error('Noticia no encontrada')
       }
 
-      // Procesar la noticia
       const noticiaProcesada = {
         ...noticia,
         fechaFormateada: this.formatearFecha(noticia.fecha),
-        nombreAutor: await this.obtenerNombreAutor(noticia.autor)
+        nombreAutor: noticia.nombreAutor
       }
       
       this.state = { 
@@ -63,21 +62,6 @@ export default class NoticiaModel extends EventEmitter {
         error: error.message 
       }
       this.emit('change', this.getState())
-    }
-  }
-
-  // Método para obtener el nombre del autor
-  async obtenerNombreAutor(idAutor) {
-    if (!idAutor || idAutor === 0) {
-      return 'Redactor'
-    }
-
-    try {
-      const usuario = await ApiClient.getUsuario(idAutor)
-      return usuario?.nombre || `Usuario ${idAutor}`
-    } catch (error) {
-      console.warn(`No se pudo obtener el autor ${idAutor}:`, error.message)
-      return `Usuario ${idAutor}`
     }
   }
 

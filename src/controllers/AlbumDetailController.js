@@ -8,6 +8,9 @@ export default class AlbumDetailController extends EventEmitter {
     this.view = view
     this.albumId = albumId
     this.currentPlayingSong = null
+    this.tiempoReproduccion = 0
+    this.intervaloEscucha = null
+    this.escuchaRegistrada = false
 
     this.model.on('change', (state) => {
       this.view.render({
@@ -36,9 +39,13 @@ export default class AlbumDetailController extends EventEmitter {
       await this._toggleFavoritoArtista(artistaId)
     })
 
-	this.view.on('shareAlbum', () => {
-	  this.compartirAlbum()
-	})
+    this.view.on('shareAlbum', () => {
+      this.compartirAlbum()
+    })
+
+    this.view.on('cargarEstadisticasCancion', async (cancionId) => {
+      await this.model.cargarEstadisticasCancion(cancionId)
+    })
 
     this._inicializar()
   }
@@ -51,7 +58,7 @@ export default class AlbumDetailController extends EventEmitter {
       await this.model.cargarFavoritos(user.id)
     } catch (error) {
       console.error("Error al inicializar AlbumDetailController:", error)
-      this.view.showError && this.view.showError("No se pudo cargar el álbum")
+      this.view.showError("No se pudo cargar el álbum")
     }
   }
 
@@ -59,13 +66,17 @@ export default class AlbumDetailController extends EventEmitter {
     try {
       if (this.currentPlayingSong === cancionId) {
         this.view.pausarCancion()
+        this._detenerContadorEscucha()
         this.currentPlayingSong = null
         return
       }
 
+      this._detenerContadorEscucha()
+
       const audioUrl = ApiClient.getCancionAudioUrl(cancionId)
       this.view.reproducirCancion(cancionId, audioUrl)
       this.currentPlayingSong = cancionId
+      this._iniciarContadorEscucha(cancionId)
     } catch (error) {
       console.error('Error al reproducir canción:', error)
     }
@@ -88,7 +99,7 @@ export default class AlbumDetailController extends EventEmitter {
       }
     } catch (error) {
       console.error(error)
-      this.view.showError && this.view.showError("Error gestionando favoritos de canción")
+      this.view.showError("Error gestionando favoritos de canción")
     }
   }
 
@@ -107,31 +118,94 @@ export default class AlbumDetailController extends EventEmitter {
       }
     } catch (error) {
       console.error(error)
-      this.view.showError && this.view.showError("Error gestionando favoritos del artista")
+      this.view.showError("Error gestionando favoritos del artista")
+    }
+  }
+
+  async _pagarAlbum(tarjeta) {
+    try {
+      const user = JSON.parse(localStorage.getItem('authUser') || 'null')
+      if (!user?.id) throw new Error("Debes iniciar sesión")
+
+      const { numero, cvv, expiracion } = tarjeta?.tarjeta || {}
+      if (!numero || !cvv || !expiracion) throw new Error("Todos los campos de la tarjeta son obligatorios")
+
+      const payload = {
+        cliente_id: Number(user.id),
+        producto: {
+          id: Number(this.albumId),
+          tipo: 'digital',
+          cantidad: 1
+        },
+        pago: {
+          tipo: 'tarjeta',
+          numero: numero.trim(),
+          cvv: cvv.trim(),
+          expiracion: expiracion.trim()
+        }
+      }
+
+      const res = await ApiClient.comprarMerch(payload)
+      this.view.showMessage(res?.mensaje || 'Compra realizada con éxito!')
+    } catch (err) {
+      console.error(err)
+      this.view.showError(err.message || 'Error en el pago')
     }
   }
 
   compartirAlbum() {
-	if (!this.model.state.album) return
+      if (!this.model.state.album) return;
 
-	const album = this.model.state.album
-	const shareData = {
-		title: album.nombre,
-		text: `Mira el álbum "${album.nombre}" de ${album.nombreArtista}`,
-		url: window.location.href
-	}
+      const album = this.model.state.album;
+      const shareData = {
+          title: album.nombre,
+          text: `Mira el álbum "${album.nombre}" de ${album.nombreArtista}`,
+          url: window.location.href
+      };
 
-	if (navigator.share) {
-		navigator.share(shareData).catch(console.error)
-	} else {
-		// Fallback: copiar al portapapeles
-		navigator.clipboard.writeText(window.location.href).then(() => {
-		alert('Enlace copiado al portapapeles')
-		}).catch(console.error)
-	}
+      if (navigator.share) {
+          navigator.share(shareData).catch(console.error);
+      } else {
+          navigator.clipboard.writeText(window.location.href)
+              .then(() => {
+                  alert('Enlace copiado al portapapeles');
+              })
+              .catch(console.error);
+      }
+  }
+
+  _iniciarContadorEscucha(cancionId) {
+    this.tiempoReproduccion = 0
+    this.escuchaRegistrada = false
+
+    this.intervaloEscucha = setInterval(async () => {
+      this.tiempoReproduccion++
+      
+      if (this.tiempoReproduccion >= 15 && !this.escuchaRegistrada) {
+        try {
+          const user = JSON.parse(localStorage.getItem('authUser') || 'null')
+          if (user?.id) {
+            await ApiClient.registrarEscucha(user.id, cancionId)
+            this.escuchaRegistrada = true
+          }
+        } catch (error) {
+          console.error('Error al registrar escucha:', error)
+        }
+      }
+    }, 1000)
+  }
+
+  _detenerContadorEscucha() {
+    if (this.intervaloEscucha) {
+      clearInterval(this.intervaloEscucha)
+      this.intervaloEscucha = null
+    }
+    this.tiempoReproduccion = 0
+    this.escuchaRegistrada = false
   }
 
   destroy() {
+    this._detenerContadorEscucha()
     this.view.pausarCancion()
   }
 }

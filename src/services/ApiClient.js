@@ -210,6 +210,12 @@ export default {
     return res?.merch || null
   },
 
+  async deleteMerch(id) {
+    if (!id) throw new Error('ID de merch requerido')
+    return http(CONTENIDO_BASE, `/merch/${id}`, withAuth({ method: 'DELETE' }))
+  },
+  
+
   async disminuirStockMerch(id, cantidad = 1) {
     return http(CONTENIDO_BASE, `/merch/${id}/disminuirStockMerch`, withAuth({
       method: 'PATCH',
@@ -303,5 +309,39 @@ export default {
 
   async getFavoritosArtistas(idUsuario) {
     return http(USUARIOS_BASE, `/usuarios/${idUsuario}/favoritos/artistas`, withAuth({ method: 'GET' }))
+  },
+
+  // ========== ESTADÍSTICAS ==========
+
+  async registrarEscucha(idUsuario, idCancion) {
+    return http(ESTADISTICAS_BASE, '/escuchas', withAuth({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        idUsuario, 
+        idCancion, 
+        fecha: new Date().toISOString() 
+      })
+    }))
+  },
+
+  async getEstadisticasUsuario(idUsuario, periodo = 'total') {
+    return http(ESTADISTICAS_BASE, `/usuarios/${idUsuario}/estadisticas?periodo=${periodo}`, withAuth())
+  },
+
+  async getEstadisticasAlbum(idAlbum) {
+    return http(ESTADISTICAS_BASE, `/estadisticas/albumes/${idAlbum}`, withAuth())
+  },
+
+  async getEstadisticasCancion(idCancion) {
+    return http(ESTADISTICAS_BASE, `/estadisticas/canciones/${idCancion}`, withAuth())
+  },
+
+  async getEstadisticasMerchandising(idMerch) {
+    return http(ESTADISTICAS_BASE, `/estadisticas/merchandising/${idMerch}`, withAuth())
+  },
+
+  async getRankingCanciones(limite = 10, periodo = 'total') {
+    return http(ESTADISTICAS_BASE, `/ranking/canciones?limite=${limite}&periodo=${periodo}`)
   }
 }

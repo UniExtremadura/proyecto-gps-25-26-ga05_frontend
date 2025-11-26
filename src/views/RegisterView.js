@@ -52,7 +52,6 @@ export default class RegisterView extends EventEmitter {
                       <option value="" selected disabled>Selecciona un tipo</option>
                     </select>
                   </div>
-                  <div class="form-text">Según la tabla de tipos de usuario de la base de datos.</div>
                 </div>
 
                 <div class="col-12 col-md-6">

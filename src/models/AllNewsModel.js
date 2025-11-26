@@ -21,20 +21,15 @@ export default class AllNewsModel extends EventEmitter {
       this.emit('change', this.getState())
       
       const noticias = await ApiClient.getNoticias()
-      
-      // Procesar las noticias
-      const noticiasProcesadas = await Promise.all(
-        noticias.map(async (noticia) => {
-          const nombreAutor = await this.obtenerNombreAutor(noticia.autor)
-          
-          return {
-            ...noticia,
-            fechaFormateada: this.formatearFecha(noticia.fecha),
-            extracto: this.extraerTexto(noticia.contenidoHTML).substring(0, 100) + '...',
-            nombreAutor: nombreAutor
-          }
-        })
-      )
+	  
+	  const noticiasProcesadas = noticias.map(noticia => {
+        return {
+          ...noticia,
+          fechaFormateada: this.formatearFecha(noticia.fecha),
+          extracto: this.extraerTexto(noticia.contenidoHTML).substring(0, 100) + '...',
+          nombreAutor: noticia.nombreAutor || `Usuario ${noticia.autor}`
+        }
+      })
       
       // Actualizar estado
       this.state = { 
@@ -50,21 +45,6 @@ export default class AllNewsModel extends EventEmitter {
         error: error.message 
       }
       this.emit('change', this.getState())
-    }
-  }
-
-  // Método para obtener el nombre del autor
-  async obtenerNombreAutor(idAutor) {
-    if (!idAutor || idAutor === 0) {
-      return 'Redactor'
-    }
-
-    try {
-      const usuario = await ApiClient.getUsuario(idAutor)
-      return usuario?.nombre || `Usuario ${idAutor}`
-    } catch (error) {
-      console.warn(`No se pudo obtener el autor ${idAutor}:`, error.message)
-      return `Usuario ${idAutor}`
     }
   }
 

@@ -49,13 +49,26 @@ export default class AlbumDetailView extends EventEmitter {
                   <h2 id="album-title" class="h4 fw-bold mb-2"></h2>
                   <p id="album-artist" class="text-muted mb-3"></p>
                   <div class="d-grid gap-2">
-                    <button class="btn btn-primary btn-lg">
+                    <button id="btn-comprar" class="btn btn-primary btn-lg">
                       <i class="bi bi-cart me-2"></i>Comprar - $<span id="album-price"></span>
                     </button>
-					<button class="btn btn-outline-primary" id="share-album-btn">
-						<i class="bi bi-share me-1"></i>Compartir álbum
-					</button>
+                    <button class="btn btn-outline-primary" id="share-album-btn">
+                      <i class="bi bi-share me-1"></i>Compartir álbum
+                    </button>
                   </div>
+
+                  <div id="payment-form" class="card p-3 mt-3 d-none">
+                    <h5 class="mb-3">Datos de pago</h5>
+                    <label class="form-label">Número de tarjeta</label>
+                    <input id="input-numero" type="text" maxlength="16" class="form-control mb-3">
+                    <label class="form-label">CVV</label>
+                    <input id="input-cvv" type="text" maxlength="3" class="form-control mb-3">
+                    <label class="form-label">Fecha expiración (MM/AA)</label>
+                    <input id="input-exp" type="text" placeholder="12/26" class="form-control mb-3">
+                    <button id="btn-pagar" class="btn btn-success w-100">Pagar</button>
+                  </div>
+
+                  <div id="message-area" class="mt-3"></div>
                 </div>
               </div>
             </div>
@@ -86,9 +99,13 @@ export default class AlbumDetailView extends EventEmitter {
                           <strong><i class="bi bi-calendar me-2"></i>Fecha:</strong>
                           <span id="album-date" class="ms-2"></span>
                         </li>
-                        <li>
+                        <li class="mb-2">
                           <strong><i class="bi bi-music-note-beamed me-2"></i>Género:</strong>
                           <span id="album-genre" class="ms-2"></span>
+                        </li>
+                        <li class="mb-2">
+                          <strong><i class="bi bi-cart-check me-2"></i>Ventas:</strong>
+                          <span id="album-stats-container" class="ms-2"></span>
                         </li>
                       </ul>
                     </div>
@@ -112,7 +129,15 @@ export default class AlbumDetailView extends EventEmitter {
     this.$songsList = this.root.querySelector('#songs-list')
     this.$audioPlayer = this.root.querySelector('#audio-player')
 
-    this.root.querySelector('#retry-btn').addEventListener('click', () => {
+    this.$btnComprar = this.root.querySelector('#btn-comprar')
+    this.$paymentForm = this.root.querySelector('#payment-form')
+    this.$btnPagar = this.root.querySelector('#btn-pagar')
+    this.$numero = this.root.querySelector('#input-numero')
+    this.$cvv = this.root.querySelector('#input-cvv')
+    this.$exp = this.root.querySelector('#input-exp')
+    this.$message = this.root.querySelector('#message-area')
+
+    this.root.querySelector('#retry-btn')?.addEventListener('click', () => {
       this.emit('reintentar')
     })
 
@@ -120,6 +145,23 @@ export default class AlbumDetailView extends EventEmitter {
       this.emit('shareAlbum')
     })
 
+    if (this.$btnComprar) {
+      this.$btnComprar.addEventListener('click', () => {
+        this.$paymentForm?.classList.toggle('d-none')
+      })
+    }
+
+    if (this.$btnPagar) {
+      this.$btnPagar.addEventListener('click', () => {
+        this.emit('pagar', {
+          tarjeta: {
+            numero: this.$numero?.value.trim(),
+            cvv: this.$cvv?.value.trim(),
+            expiracion: this.$exp?.value.trim()
+          }
+        })
+      })
+    }
   }
 
   render(state) {
@@ -144,6 +186,14 @@ export default class AlbumDetailView extends EventEmitter {
 
     if (state.album) {
       this._renderAlbum(state.album, state.favoritoArtista)
+      
+      if (state.estadisticasAlbum) {
+        this._renderEstadisticasAlbum(state.estadisticasAlbum)
+      }
+      
+      if (Object.keys(state.estadisticasCanciones).length > 0) {
+        this._renderEstadisticasCanciones(state.estadisticasCanciones)
+      }
     }
   }
 
@@ -176,23 +226,22 @@ export default class AlbumDetailView extends EventEmitter {
     img.style.height = '300px'
     img.style.objectFit = 'cover'
     img.style.borderRadius = '0.375rem 0.375rem 0 0'
-    img.onerror = () => {
-      img.style.display = 'none'
-    }
+    img.onerror = () => { img.style.display = 'none' }
     $imageContainer.appendChild(img)
 
     this._renderCanciones(album.canciones)
-	this.currentAlbum = album
+    this.currentAlbum = album
   }
 
   _renderCanciones(canciones) {
     this.$songsList.innerHTML = canciones.map((cancion, index) => `
       <div class="list-group-item d-flex justify-content-between align-items-center py-3 song-item" data-song-id="${cancion.id}">
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center flex-grow-1">
           <span class="text-muted me-3" style="min-width: 30px;">${index + 1}</span>
-          <div>
+          <div class="flex-grow-1">
             <h6 class="mb-0 fw-bold">${cancion.nombre}</h6>
             <small class="text-muted">${cancion.duracion}</small>
+            <small class="song-stats ms-2 text-info" data-song-id="${cancion.id}"></small>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2">
@@ -220,6 +269,38 @@ export default class AlbumDetailView extends EventEmitter {
         const songId = Number(btn.getAttribute('data-song-id'))
         this.emit('toggleFavoritoCancion', songId)
       })
+    })
+
+    canciones.forEach(cancion => {
+      this.emit('cargarEstadisticasCancion', cancion.id)
+    })
+  }
+
+  _renderEstadisticasAlbum(estadisticas) {
+    const $container = this.root.querySelector('#album-stats-container')
+    if (!$container) return
+    
+    if (!estadisticas) {
+      $container.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>'
+      return
+    }
+    
+    const ventasUltimoMes = estadisticas.ventasUltimoMes !== undefined ? estadisticas.ventasUltimoMes : 0
+    $container.innerHTML = `${estadisticas.totalVentas || 0} total <span class="text-muted">(${ventasUltimoMes} último mes)</span>`
+  }
+
+  _renderEstadisticasCanciones(estadisticasCanciones) {
+    Object.keys(estadisticasCanciones).forEach(cancionId => {
+      const estadisticas = estadisticasCanciones[cancionId]
+      const $statElement = this.root.querySelector(`.song-stats[data-song-id="${cancionId}"]`)
+      if ($statElement && estadisticas) {
+        const totalEscuchas = estadisticas.totalEscuchas || 0
+        const escuchasUltimoMes = estadisticas.escuchasUltimoMes || 0
+        $statElement.innerHTML = `
+          <i class="bi bi-headphones"></i> ${totalEscuchas.toLocaleString()} 
+          ${escuchasUltimoMes > 0 ? `<span class="text-muted">(${escuchasUltimoMes} este mes)</span>` : ''}
+        `
+      }
     })
   }
 
@@ -258,22 +339,32 @@ export default class AlbumDetailView extends EventEmitter {
     })
   }
 
-  shareAlbum() {
-    if (!this.currentAlbum) return
-  
-    const shareData = {
-      title: this.currentAlbum.nombre,
-      text: `Mira el álbum "${this.currentAlbum.nombre}" de ${this.currentAlbum.nombreArtista}`,
-      url: window.location.href
-    }
+  showMessage(text, type = 'success') {
+    this.$message.innerHTML = `<div class="alert alert-${type}" role="alert">${text}</div>`
+    setTimeout(() => { this.$message.innerHTML = '' }, 3500)
+  }
+
+  showError(text) {
+    this.showMessage(text, 'danger')
+  }
+
+  compartirAlbum() {
+  const album = this.model.state.album
+  if (!album) return
+
+  const shareData = {
+    title: album.nombre,
+    text: `Mira el álbum "${album.nombre}" de ${album.nombreArtista}`,
+    url: window.location.href
+  }
 
     if (navigator.share) {
       navigator.share(shareData).catch(console.error)
     } else {
-      // Fallback: copiar al portapapeles
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        alert('Enlace copiado al portapapeles')
-      }).catch(console.error)
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => alert('Enlace copiado al portapapeles'))
+        .catch(console.error)
     }
   }
+
 }

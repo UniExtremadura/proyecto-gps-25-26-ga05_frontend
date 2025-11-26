@@ -49,8 +49,8 @@ export default class AlbumExplorerController extends EventEmitter {
       const user = JSON.parse(localStorage.getItem('authUser') || 'null')
       if (!user?.id) throw new Error("Debes iniciar sesión")
 
-      const albumIdNum = Number(albumId)  // <-- convertir a número
-      const album = this.model.state.albumes.find(a => a.id === albumIdNum)
+      const albumIdNum = Number(albumId)
+      const album = this.model.state.albumes.find(a => Number(a.id) === albumIdNum)
       if (!album) return
 
       if (album.favorito) {
@@ -62,9 +62,10 @@ export default class AlbumExplorerController extends EventEmitter {
       }
     } catch (err) {
       console.error(err)
-      this.view.showError("Error gestionando favoritos")
+      if (this.view.showError) this.view.showError("Error gestionando favoritos")
     }
   })
+
 
     this._inicializar()
   }

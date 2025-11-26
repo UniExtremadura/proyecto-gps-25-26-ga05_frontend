@@ -1,4 +1,5 @@
 import EventEmitter from '../core/EventEmitter.js'
+import ApiClient from '../services/ApiClient.js'
 
 export default class MerchDetailView extends EventEmitter {
   constructor(rootEl) {
@@ -29,6 +30,7 @@ export default class MerchDetailView extends EventEmitter {
               <h2 id="merch-name" class="fw-bold"></h2>
               <div class="mb-2"><strong id="merch-price" class="text-primary"></strong></div>
               <div class="mb-3"><small class="text-muted">Stock: <span id="merch-stock">-</span></small></div>
+              <div id="merch-stats" class="mb-3"></div>
               <p id="merch-desc" class="text-muted"></p>
 
               <!-- 🟦 FORMULARIO DE COMPRA -->
@@ -51,6 +53,7 @@ export default class MerchDetailView extends EventEmitter {
               </div>
 
               <a href="/merch" data-link class="btn btn-outline-secondary mt-3">Volver</a>
+              <button id="btn-borrar-merch" class="btn btn-danger mt-3 ms-2" hidden>Borrar producto</button>
 
               <div id="message-area" class="mt-3"></div>
             </div>
@@ -66,6 +69,7 @@ export default class MerchDetailView extends EventEmitter {
     this.$name = this.root.querySelector('#merch-name')
     this.$price = this.root.querySelector('#merch-price')
     this.$stock = this.root.querySelector('#merch-stock')
+    this.$stats = this.root.querySelector('#merch-stats')
     this.$desc = this.root.querySelector('#merch-desc')
     this.$message = this.root.querySelector('#message-area')
 
@@ -78,6 +82,8 @@ export default class MerchDetailView extends EventEmitter {
     // Botón pagar
     this.$btnPagar = this.root.querySelector("#btn-pagar")
 
+    this.$btnBorrar = this.root.querySelector('#btn-borrar-merch')
+
     // Evento pagar
     this.$btnPagar.addEventListener("click", () => {
       this.emit("pagar", {
@@ -89,12 +95,41 @@ export default class MerchDetailView extends EventEmitter {
         }
       })
     })
+
+    // Borrar (solo administradores)
+    const currentUser = JSON.parse(localStorage.getItem('authUser') || 'null')
+    const isAdmin = !!(currentUser && currentUser.tipo === 1)
+    if (this.$btnBorrar) {
+      this.$btnBorrar.hidden = !isAdmin
+      this.$btnBorrar.addEventListener('click', async () => {
+        const ok = confirm('¿Eliminar este producto de merchandising? Esta acción no se puede deshacer.')
+        if (!ok) return
+        // Obtenemos id del merch desde dataset o desde el name text si fuera necesario
+        const id = this.$name.dataset?.id || this.$btnBorrar.dataset?.id || null
+        if (!id) {
+          // Emitir sin id para que el controlador intente realizar acción con el estado actual
+          this.emit('borrarMerch')
+          return
+        }
+        try {
+          await ApiClient.deleteMerch(id)
+          this.emit('merchDeleted', id)
+        } catch (err) {
+          console.error('Error al eliminar merch:', err)
+          this.showError('Error al eliminar el producto: ' + (err.message || err))
+        }
+      })
+    }
   }
 
   render(state) {
     if (state.loading) return this._showLoading()
     if (state.error) return this._showError(state.error)
     this._showContent(state.merch)
+    
+    if (state.estadisticas) {
+      this._renderEstadisticas(state.estadisticas)
+    }
   }
 
   _showLoading() {
@@ -118,6 +153,11 @@ export default class MerchDetailView extends EventEmitter {
     this.$image.src = merch.imagenUrl || ''
     this.$image.alt = merch.nombre || 'Producto'
     this.$name.textContent = merch.nombre || ''
+    // Guardar id en dataset para acciones como borrar
+    if (merch.id || merch.Id || merch.merchId) {
+      this.$name.dataset.id = merch.id || merch.Id || merch.merchId
+      if (this.$btnBorrar) this.$btnBorrar.dataset.id = merch.id || merch.Id || merch.merchId
+    }
     this.$price.textContent = merch.precioFormateado || merch.precio || ''
     this.$stock.textContent = merch.stock ?? '-'
     this.$desc.textContent = merch.descripcion || ''
@@ -139,5 +179,22 @@ export default class MerchDetailView extends EventEmitter {
 
   showError(text) {
     this.showMessage(text, 'danger')
+  }
+
+  _renderEstadisticas(estadisticas) {
+    if (!this.$stats) return
+    
+    const totalVentas = estadisticas.totalVentas || 0
+    const ventasUltimoMes = estadisticas.ventasUltimoMes || 0
+    
+    this.$stats.innerHTML = `
+      <div class="alert alert-info mb-0">
+        <strong><i class="bi bi-graph-up me-2"></i>Estadísticas de ventas:</strong>
+        <div class="mt-2">
+          <span class="badge bg-primary me-2">${totalVentas} unidades vendidas</span>
+          ${ventasUltimoMes > 0 ? `<span class="badge bg-secondary">${ventasUltimoMes} este mes</span>` : ''}
+        </div>
+      </div>
+    `
   }
 }
