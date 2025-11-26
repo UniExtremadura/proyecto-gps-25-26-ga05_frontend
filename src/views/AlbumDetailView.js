@@ -99,9 +99,13 @@ export default class AlbumDetailView extends EventEmitter {
                           <strong><i class="bi bi-calendar me-2"></i>Fecha:</strong>
                           <span id="album-date" class="ms-2"></span>
                         </li>
-                        <li>
+                        <li class="mb-2">
                           <strong><i class="bi bi-music-note-beamed me-2"></i>Género:</strong>
                           <span id="album-genre" class="ms-2"></span>
+                        </li>
+                        <li class="mb-2">
+                          <strong><i class="bi bi-cart-check me-2"></i>Ventas:</strong>
+                          <span id="album-stats-container" class="ms-2"></span>
                         </li>
                       </ul>
                     </div>
@@ -182,6 +186,14 @@ export default class AlbumDetailView extends EventEmitter {
 
     if (state.album) {
       this._renderAlbum(state.album, state.favoritoArtista)
+      
+      if (state.estadisticasAlbum) {
+        this._renderEstadisticasAlbum(state.estadisticasAlbum)
+      }
+      
+      if (Object.keys(state.estadisticasCanciones).length > 0) {
+        this._renderEstadisticasCanciones(state.estadisticasCanciones)
+      }
     }
   }
 
@@ -224,11 +236,12 @@ export default class AlbumDetailView extends EventEmitter {
   _renderCanciones(canciones) {
     this.$songsList.innerHTML = canciones.map((cancion, index) => `
       <div class="list-group-item d-flex justify-content-between align-items-center py-3 song-item" data-song-id="${cancion.id}">
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center flex-grow-1">
           <span class="text-muted me-3" style="min-width: 30px;">${index + 1}</span>
-          <div>
+          <div class="flex-grow-1">
             <h6 class="mb-0 fw-bold">${cancion.nombre}</h6>
             <small class="text-muted">${cancion.duracion}</small>
+            <small class="song-stats ms-2 text-info" data-song-id="${cancion.id}"></small>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2">
@@ -256,6 +269,38 @@ export default class AlbumDetailView extends EventEmitter {
         const songId = Number(btn.getAttribute('data-song-id'))
         this.emit('toggleFavoritoCancion', songId)
       })
+    })
+
+    canciones.forEach(cancion => {
+      this.emit('cargarEstadisticasCancion', cancion.id)
+    })
+  }
+
+  _renderEstadisticasAlbum(estadisticas) {
+    const $container = this.root.querySelector('#album-stats-container')
+    if (!$container) return
+    
+    if (!estadisticas) {
+      $container.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>'
+      return
+    }
+    
+    const ventasUltimoMes = estadisticas.ventasUltimoMes !== undefined ? estadisticas.ventasUltimoMes : 0
+    $container.innerHTML = `${estadisticas.totalVentas || 0} total <span class="text-muted">(${ventasUltimoMes} último mes)</span>`
+  }
+
+  _renderEstadisticasCanciones(estadisticasCanciones) {
+    Object.keys(estadisticasCanciones).forEach(cancionId => {
+      const estadisticas = estadisticasCanciones[cancionId]
+      const $statElement = this.root.querySelector(`.song-stats[data-song-id="${cancionId}"]`)
+      if ($statElement && estadisticas) {
+        const totalEscuchas = estadisticas.totalEscuchas || 0
+        const escuchasUltimoMes = estadisticas.escuchasUltimoMes || 0
+        $statElement.innerHTML = `
+          <i class="bi bi-headphones"></i> ${totalEscuchas.toLocaleString()} 
+          ${escuchasUltimoMes > 0 ? `<span class="text-muted">(${escuchasUltimoMes} este mes)</span>` : ''}
+        `
+      }
     })
   }
 

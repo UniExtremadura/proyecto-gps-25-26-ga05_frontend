@@ -20,6 +20,8 @@ export default class ArtistaController {
     this.isOwner = effectiveIsOwner
     this.editMode = false
     this.visibilitySettings = null
+    this.estadisticas = null
+    this.periodoEstadisticas = 'total'
 
     // Suscripciones a eventos de la vista
     this.view.on('followToggle', () => this.toggleFollow())
@@ -29,6 +31,8 @@ export default class ArtistaController {
     this.view.on('cancelEdit', () => this.toggleEditMode())
     // Evento para navegar a la sección de administración de usuarios
     this.view.on('adminUsers', () => this.openAdminUsers())
+    // Evento para cambiar periodo de estadísticas
+    this.view.on('cambioPeriodoEstadisticas', (periodo) => this.cargarEstadisticas(periodo))
 
     // Inicializar
     this.init()
@@ -70,6 +74,8 @@ export default class ArtistaController {
     if (!this.isOwner) {
       this.view.setFollowState(this.followed)
     }
+
+    this.cargarEstadisticas('total')
   }
 
   loadVisibilitySettings() {
@@ -142,6 +148,24 @@ export default class ArtistaController {
       localStorage.setItem(key, this.followed ? '1' : '0')
     } catch (e) {}
     this.view.setFollowState(this.followed)
+  }
+
+  async cargarEstadisticas(periodo = 'total') {
+    try {
+      this.periodoEstadisticas = periodo
+      const ApiClient = (await import('../services/ApiClient.js')).default
+      const estadisticas = await ApiClient.getEstadisticasUsuario(this.userId, periodo)
+      this.estadisticas = estadisticas
+      this.view.renderEstadisticas(estadisticas, periodo)
+    } catch (error) {
+      console.error('Error al cargar estadísticas de usuario:', error)
+      // Mostrar estadísticas vacías en caso de error
+      this.view.renderEstadisticas({
+        totalEscuchas: 0,
+        totalComprasAlbumes: 0,
+        totalComprasMerch: 0
+      }, periodo)
+    }
   }
 
   openCommunity() {

@@ -8,6 +8,9 @@ export default class AlbumDetailController extends EventEmitter {
     this.view = view
     this.albumId = albumId
     this.currentPlayingSong = null
+    this.tiempoReproduccion = 0
+    this.intervaloEscucha = null
+    this.escuchaRegistrada = false
 
     this.model.on('change', (state) => {
       this.view.render({
@@ -36,12 +39,12 @@ export default class AlbumDetailController extends EventEmitter {
       await this._toggleFavoritoArtista(artistaId)
     })
 
-    this.view.on('pagar', async (tarjeta) => {
-      await this._pagarAlbum(tarjeta)
-    })
-
     this.view.on('shareAlbum', () => {
       this.compartirAlbum()
+    })
+
+    this.view.on('cargarEstadisticasCancion', async (cancionId) => {
+      await this.model.cargarEstadisticasCancion(cancionId)
     })
 
     this._inicializar()
@@ -63,13 +66,17 @@ export default class AlbumDetailController extends EventEmitter {
     try {
       if (this.currentPlayingSong === cancionId) {
         this.view.pausarCancion()
+        this._detenerContadorEscucha()
         this.currentPlayingSong = null
         return
       }
 
+      this._detenerContadorEscucha()
+
       const audioUrl = ApiClient.getCancionAudioUrl(cancionId)
       this.view.reproducirCancion(cancionId, audioUrl)
       this.currentPlayingSong = cancionId
+      this._iniciarContadorEscucha(cancionId)
     } catch (error) {
       console.error('Error al reproducir canción:', error)
     }
@@ -167,8 +174,38 @@ export default class AlbumDetailController extends EventEmitter {
       }
   }
 
+  _iniciarContadorEscucha(cancionId) {
+    this.tiempoReproduccion = 0
+    this.escuchaRegistrada = false
+
+    this.intervaloEscucha = setInterval(async () => {
+      this.tiempoReproduccion++
+      
+      if (this.tiempoReproduccion >= 15 && !this.escuchaRegistrada) {
+        try {
+          const user = JSON.parse(localStorage.getItem('authUser') || 'null')
+          if (user?.id) {
+            await ApiClient.registrarEscucha(user.id, cancionId)
+            this.escuchaRegistrada = true
+          }
+        } catch (error) {
+          console.error('Error al registrar escucha:', error)
+        }
+      }
+    }, 1000)
+  }
+
+  _detenerContadorEscucha() {
+    if (this.intervaloEscucha) {
+      clearInterval(this.intervaloEscucha)
+      this.intervaloEscucha = null
+    }
+    this.tiempoReproduccion = 0
+    this.escuchaRegistrada = false
+  }
 
   destroy() {
+    this._detenerContadorEscucha()
     this.view.pausarCancion()
   }
 }

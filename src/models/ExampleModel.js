@@ -7,7 +7,9 @@ export default class ExampleModel extends EventEmitter {
     this.state = {
       noticias: [],
       loading: true,
-      error: null
+      error: null,
+      rankingCanciones: [],
+      rankingLoading: false
     }
   }
 
@@ -43,6 +45,9 @@ export default class ExampleModel extends EventEmitter {
         loading: false 
       }
       this.emit('change', this.getState())
+
+      // Cargar ranking de canciones en segundo plano
+      this.cargarRankingCanciones()
     } catch (error) {
       this.state = { 
         ...this.state, 
@@ -90,6 +95,30 @@ export default class ExampleModel extends EventEmitter {
       })
     } catch {
       return 'Fecha inválida'
+    }
+  }
+
+  async cargarRankingCanciones(limite = 10, periodo = 'total') {
+    try {
+      this.state = { ...this.state, rankingLoading: true }
+      this.emit('change', this.getState())
+
+      const ranking = await ApiClient.getRankingCanciones(limite, periodo)
+      
+      this.state = {
+        ...this.state,
+        rankingCanciones: ranking || [],
+        rankingLoading: false
+      }
+      this.emit('change', this.getState())
+    } catch (error) {
+      console.error('Error al cargar ranking de canciones:', error)
+      this.state = {
+        ...this.state,
+        rankingCanciones: [],
+        rankingLoading: false
+      }
+      this.emit('change', this.getState())
     }
   }
 }

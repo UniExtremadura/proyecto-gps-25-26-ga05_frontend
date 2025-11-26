@@ -30,6 +30,7 @@ export default class MerchDetailView extends EventEmitter {
               <h2 id="merch-name" class="fw-bold"></h2>
               <div class="mb-2"><strong id="merch-price" class="text-primary"></strong></div>
               <div class="mb-3"><small class="text-muted">Stock: <span id="merch-stock">-</span></small></div>
+              <div id="merch-stats" class="mb-3"></div>
               <p id="merch-desc" class="text-muted"></p>
 
               <!-- 🟦 FORMULARIO DE COMPRA -->
@@ -68,6 +69,7 @@ export default class MerchDetailView extends EventEmitter {
     this.$name = this.root.querySelector('#merch-name')
     this.$price = this.root.querySelector('#merch-price')
     this.$stock = this.root.querySelector('#merch-stock')
+    this.$stats = this.root.querySelector('#merch-stats')
     this.$desc = this.root.querySelector('#merch-desc')
     this.$message = this.root.querySelector('#message-area')
 
@@ -124,6 +126,10 @@ export default class MerchDetailView extends EventEmitter {
     if (state.loading) return this._showLoading()
     if (state.error) return this._showError(state.error)
     this._showContent(state.merch)
+    
+    if (state.estadisticas) {
+      this._renderEstadisticas(state.estadisticas)
+    }
   }
 
   _showLoading() {
@@ -173,5 +179,22 @@ export default class MerchDetailView extends EventEmitter {
 
   showError(text) {
     this.showMessage(text, 'danger')
+  }
+
+  _renderEstadisticas(estadisticas) {
+    if (!this.$stats) return
+    
+    const totalVentas = estadisticas.totalVentas || 0
+    const ventasUltimoMes = estadisticas.ventasUltimoMes || 0
+    
+    this.$stats.innerHTML = `
+      <div class="alert alert-info mb-0">
+        <strong><i class="bi bi-graph-up me-2"></i>Estadísticas de ventas:</strong>
+        <div class="mt-2">
+          <span class="badge bg-primary me-2">${totalVentas} unidades vendidas</span>
+          ${ventasUltimoMes > 0 ? `<span class="badge bg-secondary">${ventasUltimoMes} este mes</span>` : ''}
+        </div>
+      </div>
+    `
   }
 }

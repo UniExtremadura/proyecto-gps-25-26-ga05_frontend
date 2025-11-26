@@ -64,6 +64,23 @@ export default class ArtistaView extends EventEmitter {
                   <span id="artistEmail">—</span>
                 </div>
               </div>
+
+              <!-- Sección de estadísticas del usuario -->
+              <div id="estadisticas-usuario" class="mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="mb-0"><i class="bi bi-graph-up"></i> Estadísticas</h6>
+                  <div class="btn-group btn-group-sm" role="group" id="periodo-selector">
+                    <button type="button" class="btn btn-outline-primary active" data-periodo="total">Total</button>
+                    <button type="button" class="btn btn-outline-primary" data-periodo="anno">Año</button>
+                    <button type="button" class="btn btn-outline-primary" data-periodo="mes">Mes</button>
+                  </div>
+                </div>
+                <div id="estadisticas-contenido" class="text-muted small">
+                  <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -164,6 +181,10 @@ export default class ArtistaView extends EventEmitter {
     this.$sectionAlbumes = this.root.querySelector('#sectionAlbumes')
     this.$sectionMerch = this.root.querySelector('#sectionMerch')
 
+    // Estadísticas
+    this.$estadisticasContenido = this.root.querySelector('#estadisticas-contenido')
+    this.$periodoSelector = this.root.querySelector('#periodo-selector')
+
     // Listeners
     if (this.$follow) {
       this.$follow.addEventListener('click', () => this.emit('followToggle'))
@@ -204,6 +225,18 @@ export default class ArtistaView extends EventEmitter {
     
     if (this.$cancelEdit) {
       this.$cancelEdit.addEventListener('click', () => this.emit('cancelEdit'))
+    }
+
+    // Selector de periodo para estadísticas
+    if (this.$periodoSelector) {
+      this.$periodoSelector.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+          this.$periodoSelector.querySelectorAll('button').forEach(btn => btn.classList.remove('active'))
+          e.target.classList.add('active')
+          const periodo = e.target.dataset.periodo
+          this.emit('cambioPeriodoEstadisticas', periodo)
+        }
+      })
     }
   }
 
@@ -376,4 +409,47 @@ export default class ArtistaView extends EventEmitter {
       }
     }
   }
+
+  renderEstadisticas(estadisticas, periodo = 'total') {
+    if (!this.$estadisticasContenido) return
+    
+    const periodoTexto = {
+      'total': 'totales',
+      'anno': 'del último año',
+      'mes': 'del último mes'
+    }[periodo] || 'totales'
+
+    this.$estadisticasContenido.innerHTML = `
+      <div class="row g-2 mt-1">
+        <div class="col-md-4">
+          <div class="card border-0 bg-light">
+            <div class="card-body p-2 text-center">
+              <i class="bi bi-headphones text-primary"></i>
+              <div class="fw-bold">${estadisticas.totalEscuchas || 0}</div>
+              <small class="text-muted">Escuchas ${periodoTexto}</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-light">
+            <div class="card-body p-2 text-center">
+              <i class="bi bi-disc text-success"></i>
+              <div class="fw-bold">${estadisticas.totalComprasAlbumes || 0}</div>
+              <small class="text-muted">Álbumes comprados ${periodoTexto}</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-light">
+            <div class="card-body p-2 text-center">
+              <i class="bi bi-bag text-warning"></i>
+              <div class="fw-bold">${estadisticas.totalComprasMerch || 0}</div>
+              <small class="text-muted">Merchandising comprado ${periodoTexto}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  }
 }
+

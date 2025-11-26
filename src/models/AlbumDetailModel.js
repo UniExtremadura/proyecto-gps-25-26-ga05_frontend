@@ -9,7 +9,9 @@ export default class AlbumDetailModel extends EventEmitter {
       loading: true,
       error: null,
       favoritosCanciones: [],
-      favoritoArtista: false
+      favoritoArtista: false,
+      estadisticasAlbum: null,
+      estadisticasCanciones: {}
     }
   }
 
@@ -30,6 +32,8 @@ export default class AlbumDetailModel extends EventEmitter {
         loading: false
       }
       this.emit('change', this.getState())
+
+      this._cargarEstadisticasAlbum(albumId)
     } catch (error) {
       console.error('Error al consultar el álbum:', error)
       const errorMsg = error.message || 'Error al cargar el álbum'
@@ -50,6 +54,30 @@ export default class AlbumDetailModel extends EventEmitter {
 
   async reproducirCancion(cancionId) {
     this.emit('reproducirCancion', cancionId)
+  }
+
+  async _cargarEstadisticasAlbum(albumId) {
+    try {
+      const estadisticas = await ApiClient.getEstadisticasAlbum(albumId)
+      this.state.estadisticasAlbum = estadisticas
+      this.emit('change', this.getState())
+    } catch (error) {
+      console.error('Error al cargar estadísticas del álbum:', error)
+    }
+  }
+
+  async cargarEstadisticasCancion(cancionId) {
+    if (this.state.estadisticasCanciones[cancionId]) {
+      return 
+    }
+
+    try {
+      const estadisticas = await ApiClient.getEstadisticasCancion(cancionId)
+      this.state.estadisticasCanciones[cancionId] = estadisticas
+      this.emit('change', this.getState())
+    } catch (error) {
+      console.error('Error al cargar estadísticas de canción:', error)
+    }
   }
 
   async cargarFavoritos(userId) {
