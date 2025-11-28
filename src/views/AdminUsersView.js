@@ -79,18 +79,41 @@ export default class AdminUsersView extends EventEmitter {
     }
 
     this.$results.classList.remove('d-none')
-    this.$tbody.innerHTML = usuarios.map(u => `
+
+    // Obtener usuario autenticado para decisiones de UI (evitar que se pueda borrar a sí mismo)
+    let currentUser = null
+    try {
+      currentUser = JSON.parse(localStorage.getItem('authUser') || 'null')
+    } catch {}
+
+    this.$tbody.innerHTML = usuarios.map(u => {
+      const isSelf = currentUser && Number(currentUser.id) === Number(u.id)
+      const isTargetAdmin = u.tipo === 1
+      const tipoLabel = u.tipo === 2 ? 'Artista' : u.tipo === 1 ? 'Administrador' : 'Usuario'
+
+      // Decide si mostrar el botón de borrar o mostrar deshabilitado con tooltip
+      let borrarButton = ''
+      if (isSelf) {
+        borrarButton = `<button class="btn btn-sm btn-outline-danger" disabled title="No puedes eliminarte a ti mismo">Borrar</button>`
+      } else if (isTargetAdmin) {
+        borrarButton = `<button class="btn btn-sm btn-outline-danger" disabled title="No puedes eliminar a otros administradores">Borrar</button>`
+      } else {
+        borrarButton = `<button class="btn btn-sm btn-outline-danger" data-action="borrar" data-id="${u.id}">Borrar</button>`
+      }
+
+      return `
       <tr>
         <td>${u.id}</td>
         <td>${u.nombre || ''}</td>
         <td>${u.correo || ''}</td>
-        <td>${u.tipo === 2 ? 'Artista' : u.tipo === 1 ? 'Administrador' : 'Usuario'}</td>
+        <td>${tipoLabel}</td>
         <td>
           <button class="btn btn-sm btn-outline-primary me-2" data-action="ver" data-id="${u.id}">Ver</button>
-          <button class="btn btn-sm btn-outline-danger" data-action="borrar" data-id="${u.id}">Borrar</button>
+          ${borrarButton}
         </td>
       </tr>
-    `).join('')
+      `
+    }).join('')
 
     this.$tbody.querySelectorAll('button[data-action="ver"]').forEach(btn => {
       btn.addEventListener('click', () => this.emit('verUsuario', btn.getAttribute('data-id')))

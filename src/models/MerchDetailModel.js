@@ -7,7 +7,8 @@ export default class MerchDetailModel extends EventEmitter {
     this.state = {
       merch: null,
       loading: true,
-      error: null
+      error: null,
+      estadisticas: null
     }
   }
 
@@ -50,6 +51,8 @@ export default class MerchDetailModel extends EventEmitter {
 
       this.state = { ...this.state, merch, loading: false }
       this.emit('change', this.getState())
+
+      this._cargarEstadisticas(id)
     } catch (err) {
       this.state = { ...this.state, error: err.message || String(err), loading: false }
       this.emit('change', this.getState())
@@ -63,6 +66,16 @@ export default class MerchDetailModel extends EventEmitter {
       return n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
     } catch {
       return precio
+    }
+  }
+
+  async _cargarEstadisticas(id) {
+    try {
+      const estadisticas = await ApiClient.getEstadisticasMerchandising(id)
+      this.state.estadisticas = estadisticas
+      this.emit('change', this.getState())
+    } catch (error) {
+      console.error('Error al cargar estadísticas de merchandising:', error)
     }
   }
 }

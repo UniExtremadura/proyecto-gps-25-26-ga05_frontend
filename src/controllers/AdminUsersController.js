@@ -54,6 +54,19 @@ export default class AdminUsersController {
   // Eliminar usuario (solo administradores). Pide confirmación y refresca resultados.
   async borrarUsuario(id) {
     if (!id) return
+    // No permitir eliminarse a sí mismo ni eliminar otros administradores desde el cliente
+    let currentUser = null
+    try { currentUser = JSON.parse(localStorage.getItem('authUser') || 'null') } catch {}
+    if (currentUser && String(currentUser.id) === String(id)) {
+      alert('No puedes eliminar tu propia cuenta desde la administración')
+      return
+    }
+    const usuarioObj = Array.isArray(this.model.state.usuarios) ? this.model.state.usuarios.find(u => String(u.id) === String(id)) : null
+    if (usuarioObj && usuarioObj.tipo === 1) {
+      alert('No puedes eliminar a otros administradores')
+      return
+    }
+
     const confirmado = window.confirm('¿Seguro que deseas eliminar este usuario? Esta acción no se puede deshacer.')
     if (!confirmado) return
     // Actualización optimista: eliminar la fila inmediatamente de la vista

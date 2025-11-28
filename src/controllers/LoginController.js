@@ -1,5 +1,6 @@
 import EventEmitter from '../core/EventEmitter.js'
 import ApiClient from '../services/ApiClient.js'
+import { getTokenExpirySeconds } from '../services/Auth.js'
 
 export default class LoginController extends EventEmitter {
   constructor(view) {
@@ -27,6 +28,11 @@ export default class LoginController extends EventEmitter {
       if (result && result.token) {
         try {
           localStorage.setItem('authToken', result.token)
+          // Guardar expiración del token para comprobaciones rápidas
+          try {
+            const exp = getTokenExpirySeconds(result.token)
+            if (exp) localStorage.setItem('authTokenExp', String(exp))
+          } catch {}
           localStorage.setItem('authUser', JSON.stringify({ id: result.id, nombre: result.nombre, correo: result.correo, tipo: result.tipo }))
           // Eliminamos cualquier resto previo de authUserId
           try { localStorage.removeItem('authUserId') } catch {}

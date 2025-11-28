@@ -28,7 +28,6 @@ export default class SearchView extends EventEmitter {
   _attachListeners() {
     // Evento de escritura en el input
     this.$input.addEventListener('input', (e) => {
-      console.log('👀 SearchView: Input detectado:', e.target.value)
       this.emit('search', e.target.value)
     })
 
@@ -37,7 +36,6 @@ export default class SearchView extends EventEmitter {
     if (searchForm) {
       searchForm.addEventListener('submit', (e) => {
         e.preventDefault()
-        console.log('📝 SearchView: Formulario enviado:', this.$input.value)
         this.emit('search', this.$input.value)
       })
     }
@@ -62,13 +60,6 @@ export default class SearchView extends EventEmitter {
   render(state) {
     const { query, results, isLoading, error } = state
 
-    console.log('🎨 SearchView: Renderizando con estado:', { 
-      query, 
-      resultCount: results.length, 
-      isLoading, 
-      error 
-    })
-
     // Si no hay query o es muy corta, ocultar dropdown
     if (!query || query.trim().length < 2) {
       this.hideDropdown()
@@ -80,16 +71,12 @@ export default class SearchView extends EventEmitter {
 
     // Renderizar contenido según estado
     if (isLoading) {
-      console.log('⏳ SearchView: Mostrando estado de carga')
       this._renderLoading()
     } else if (error) {
-      console.log('❌ SearchView: Mostrando error:', error)
       this._renderError(error)
     } else if (results.length === 0) {
-      console.log('📭 SearchView: Sin resultados')
       this._renderEmpty(query)
     } else {
-      console.log('📋 SearchView: Mostrando', results.length, 'resultados')
       this._renderResults(results)
     }
   }
@@ -214,7 +201,7 @@ export default class SearchView extends EventEmitter {
             <span class="me-2" style="font-size: 1.5rem;">${item.image}</span>
             <div>
               <div class="fw-bold">${item.name}</div>
-              <small class="text-muted">${item.followers} seguidores</small>
+              <small class="text-muted">${item.info || 'Artista'}</small>
             </div>
           </div>
         `

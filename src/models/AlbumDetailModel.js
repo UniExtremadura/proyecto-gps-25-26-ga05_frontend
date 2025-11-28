@@ -9,7 +9,9 @@ export default class AlbumDetailModel extends EventEmitter {
       loading: true,
       error: null,
       favoritosCanciones: [],
-      favoritoArtista: false
+      favoritoArtista: false,
+      estadisticasAlbum: null,
+      estadisticasCanciones: {}
     }
   }
 
@@ -23,19 +25,28 @@ export default class AlbumDetailModel extends EventEmitter {
       this.emit('change', this.getState())
 
       const album = await ApiClient.getAlbumDetalle(albumId)
-      
+
       this.state = {
         ...this.state,
-        album: album,
+        album,
         loading: false
       }
-      
       this.emit('change', this.getState())
+
+      this._cargarEstadisticasAlbum(albumId)
     } catch (error) {
+      console.error('Error al consultar el álbum:', error)
+      const errorMsg = error.message || 'Error al cargar el álbum'
+      
+      // Si el error es de SQL, mostrar mensaje más claro
+      const displayError = errorMsg.includes('does not exist') 
+        ? 'El álbum no está disponible actualmente' 
+        : errorMsg
+      
       this.state = {
         ...this.state,
         loading: false,
-        error: error.message
+        error: displayError
       }
       this.emit('change', this.getState())
     }
@@ -45,9 +56,32 @@ export default class AlbumDetailModel extends EventEmitter {
     this.emit('reproducirCancion', cancionId)
   }
 
+  async _cargarEstadisticasAlbum(albumId) {
+    try {
+      const estadisticas = await ApiClient.getEstadisticasAlbum(albumId)
+      this.state.estadisticasAlbum = estadisticas
+      this.emit('change', this.getState())
+    } catch (error) {
+      console.error('Error al cargar estadísticas del álbum:', error)
+    }
+  }
+
+  async cargarEstadisticasCancion(cancionId) {
+    if (this.state.estadisticasCanciones[cancionId]) {
+      return 
+    }
+
+    try {
+      const estadisticas = await ApiClient.getEstadisticasCancion(cancionId)
+      this.state.estadisticasCanciones[cancionId] = estadisticas
+      this.emit('change', this.getState())
+    } catch (error) {
+      console.error('Error al cargar estadísticas de canción:', error)
+    }
+  }
+
   async cargarFavoritos(userId) {
     try {
-      // Cargar favoritos de canciones
       const favCancionesResp = await ApiClient.getFavoritosCanciones(userId)
       const favCancionesIds = Array.isArray(favCancionesResp?.favoritos)
         ? favCancionesResp.favoritos.map(f => Number(f.idCancion))
@@ -62,7 +96,6 @@ export default class AlbumDetailModel extends EventEmitter {
         }))
       }
 
-      // Cargar favoritos de artistas
       const favArtistasResp = await ApiClient.getFavoritosArtistas(userId)
       const favArtistasIds = Array.isArray(favArtistasResp?.favoritos)
         ? favArtistasResp.favoritos.map(f => Number(f.idArtista))
@@ -76,7 +109,6 @@ export default class AlbumDetailModel extends EventEmitter {
       console.error('Error al cargar favoritos:', error)
     }
   }
-
 
   marcarFavoritoCancion(cancionId, valor) {
     if (!this.state.album?.canciones) return

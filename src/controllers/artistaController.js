@@ -20,6 +20,8 @@ export default class ArtistaController {
     this.isOwner = effectiveIsOwner
     this.editMode = false
     this.visibilitySettings = null
+    this.estadisticas = null
+    this.periodoEstadisticas = 'total'
 
     // Suscripciones a eventos de la vista
     this.view.on('followToggle', () => this.toggleFollow())
@@ -29,6 +31,8 @@ export default class ArtistaController {
     this.view.on('cancelEdit', () => this.toggleEditMode())
     // Evento para navegar a la sección de administración de usuarios
     this.view.on('adminUsers', () => this.openAdminUsers())
+    // Evento para cambiar periodo de estadísticas
+    this.view.on('cambioPeriodoEstadisticas', (periodo) => this.cargarEstadisticas(periodo))
 
     // Inicializar
     this.init()
@@ -70,6 +74,8 @@ export default class ArtistaController {
     if (!this.isOwner) {
       this.view.setFollowState(this.followed)
     }
+
+    this.cargarEstadisticas('total')
   }
 
   loadVisibilitySettings() {
@@ -122,17 +128,47 @@ export default class ArtistaController {
       }
     }
     
-    // TODO: Aquí se haría la petición PUT al backend para actualizar el usuario
-    // await ApiClient.updateUsuario(this.userId, this.usuario)
-    
-    console.log('Guardando perfil:', profileData)
-    
-    // Cerrar modo edición y re-renderizar
-    this.editMode = false
-    this.view.setEditMode(false)
-    this.view.render(this.usuario, this.isArtist, this.visibilitySettings)
-    
-    alert('Perfil actualizado correctamente (cambios locales)')
+    // Construir payload con sólo los campos provistos
+    const payload = {}
+    if (profileData.nombre !== undefined) payload.nombre = profileData.nombre
+    if (profileData.correo !== undefined) payload.correo = profileData.correo
+    if (profileData.contrasena !== undefined && profileData.contrasena !== '') payload.contrasena = profileData.contrasena
+    if (profileData.direccion !== undefined) payload.direccion = profileData.direccion
+    if (profileData.telefono !== undefined) payload.telefono = profileData.telefono
+    if (profileData.descripcion !== undefined) payload.descripcion = profileData.descripcion
+    if (profileData.urlImagen !== undefined) payload.urlImagen = profileData.urlImagen
+
+    console.log('Enviando actualización al backend:', payload)
+
+    try {
+      const ApiClient = (await import('../services/ApiClient.js')).default
+      // Llamada PATCH al microservicio de usuarios
+      await ApiClient.updateUsuario(this.userId, payload)
+
+      // Actualizar datos locales tras éxito
+      Object.assign(this.usuario, payload)
+
+      // Si el usuario editado es el propio autenticado, actualizar también el localStorage
+      try {
+        if (this.isOwner && this.currentUser && Number(this.currentUser.id) === Number(this.userId)) {
+          const updated = Object.assign({}, this.currentUser, payload)
+          localStorage.setItem('authUser', JSON.stringify(updated))
+          this.currentUser = updated
+        }
+      } catch (e) {
+        console.warn('No se pudo actualizar authUser en localStorage:', e)
+      }
+
+      // Si hay configuración de visibilidad (solo artistas), ya se guardó antes
+      this.editMode = false
+      this.view.setEditMode(false)
+      this.view.render(this.usuario, this.isArtist, this.visibilitySettings)
+
+      alert('Perfil actualizado correctamente')
+    } catch (err) {
+      console.error('Error actualizando perfil:', err)
+      alert('Error al actualizar el perfil: ' + (err.message || err))
+    }
   }
 
   toggleFollow() {
@@ -144,8 +180,36 @@ export default class ArtistaController {
     this.view.setFollowState(this.followed)
   }
 
+  async cargarEstadisticas(periodo = 'total') {
+    try {
+      this.periodoEstadisticas = periodo
+      const ApiClient = (await import('../services/ApiClient.js')).default
+      const estadisticas = await ApiClient.getEstadisticasUsuario(this.userId, periodo)
+      this.estadisticas = estadisticas
+      this.view.renderEstadisticas(estadisticas, periodo)
+    } catch (error) {
+      console.error('Error al cargar estadísticas de usuario:', error)
+      // Mostrar estadísticas vacías en caso de error
+      this.view.renderEstadisticas({
+        totalEscuchas: 0,
+        totalComprasAlbumes: 0,
+        totalComprasMerch: 0
+      }, periodo)
+    }
+  }
+
   openCommunity() {
-    if (!this.usuario || !this.usuario.comunidadUrl) return
-    window.open(this.usuario.comunidadUrl, '_blank', 'noopener')
+    if (!this.usuario) return
+    // Determinar id de comunidad: puede venir en varios campos o ser el id del artista
+    const communityId = this.usuario.comunidadId || this.usuario.idComunidad || this.usuario.id || this.userId
+    if (!communityId) return
+    const path = `/comunidades/${communityId}`
+    if (window.router && typeof window.router.navigate === 'function') {
+      // Navegar dentro de la SPA
+      window.router.navigate(path)
+    } else {
+      // Fallback: navegar mediante location (causa recarga)
+      window.location.href = path
+    }
   }
 }

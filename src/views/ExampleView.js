@@ -26,6 +26,16 @@ export default class ExampleView extends EventEmitter {
         </div>
       </section>
 
+      <!-- Sección de Ranking de Canciones -->
+      <section class="ranking-section mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="h3 fw-bold">
+            <i class="bi bi-trophy me-2 text-warning"></i>Top 10 Canciones Más Escuchadas
+          </h2>
+        </div>
+        <div id="ranking-container"></div>
+      </section>
+
       <!-- Sección de Noticias -->
       <section class="news-section">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -64,6 +74,7 @@ export default class ExampleView extends EventEmitter {
     this.$errorMessage = this.root.querySelector('#error-message')
     this.$newsGrid = this.root.querySelector('#news-grid')
     this.$retryBtn = this.root.querySelector('#retry-btn')
+    this.$rankingContainer = this.root.querySelector('#ranking-container')
 
     this.$retryBtn.addEventListener('click', () => {
       this.emit('cargarNoticias')
@@ -96,6 +107,12 @@ export default class ExampleView extends EventEmitter {
     this.$newsGrid.classList.remove('d-none')
 
     this._renderNoticias(state.noticias)
+    
+    if (state.rankingCanciones && state.rankingCanciones.length > 0) {
+      this._renderRanking(state.rankingCanciones)
+    } else if (state.rankingLoading) {
+      this._renderRankingLoading()
+    }
   }
 
 	_renderNoticias(noticias) {
@@ -157,5 +174,71 @@ export default class ExampleView extends EventEmitter {
 		})
 	})
 	}
+
+  _renderRankingLoading() {
+    if (!this.$rankingContainer) return
+    this.$rankingContainer.innerHTML = `
+      <div class="text-center py-3">
+        <div class="spinner-border spinner-border-sm text-primary" role="status">
+          <span class="visually-hidden">Cargando ranking...</span>
+        </div>
+      </div>
+    `
+  }
+
+  _renderRanking(canciones) {
+    if (!this.$rankingContainer) return
+    
+    if (!canciones || canciones.length === 0) {
+      this.$rankingContainer.innerHTML = `
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          No hay datos de ranking disponibles aún.
+        </div>
+      `
+      return
+    }
+
+    this.$rankingContainer.innerHTML = `
+      <div class="card border-0 shadow-sm">
+        <div class="list-group list-group-flush">
+          ${canciones.map((cancion, index) => {
+            const medalColors = ['text-warning', 'text-secondary', 'text-danger']
+            const medalIcons = ['bi-trophy-fill', 'bi-award-fill', 'bi-star-fill']
+            const isMedal = index < 3
+            
+            return `
+              <div class="list-group-item list-group-item-action d-flex align-items-center py-3 ranking-item" 
+                   style="cursor: pointer;" 
+                   data-album-id="${cancion.idAlbum || ''}"
+                   data-cancion-id="${cancion.idCancion || ''}">
+                <div class="ranking-position me-3 ${isMedal ? medalColors[index] : 'text-muted'}" style="min-width: 40px; font-size: 1.5rem; font-weight: bold; text-align: center;">
+                  ${isMedal ? `<i class="bi ${medalIcons[index]}"></i>` : (cancion.posicion || index + 1)}
+                </div>
+                <div class="flex-grow-1">
+                  <h6 class="mb-0 fw-bold">${cancion.nombreCancion || 'Canción sin título'}</h6>
+                  <small class="text-muted">${cancion.nombreArtista || 'Artista desconocido'}</small>
+                </div>
+                <div class="text-end">
+                  <span class="badge bg-primary rounded-pill">
+                    <i class="bi bi-headphones me-1"></i>${(cancion.escuchas || 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            `
+          }).join('')}
+        </div>
+      </div>
+    `
+
+    this.$rankingContainer.querySelectorAll('.ranking-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const albumId = item.dataset.albumId
+        if (albumId) {
+          this.emit('navigateToAlbum', albumId)
+        }
+      })
+    })
+  }
 	
 }
