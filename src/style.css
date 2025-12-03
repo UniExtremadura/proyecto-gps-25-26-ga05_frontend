@@ -1,0 +1,151 @@
+.login-view .auth-header {
+  background: linear-gradient(135deg, #20c997 0%, #0d6efd 100%);
+  color: #fff;
+}
+/* Estilos para la vista de registro */
+.register-view .register-header {
+  background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+  color: #fff;
+}
+
+.register-view .card {
+  border: none;
+  border-radius: 0.75rem;
+}
+
+.register-view .card-body {
+  background-color: var(--bs-body-bg);
+}
+
+.register-view .avatar-preview {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 0, 0, 0.08);
+  background-color: #f8f9fa;
+  background-size: cover;
+  background-position: center;
+}
+
+.register-view .avatar-preview.has-image {
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+}
+
+/* Mejora sutil de inputs */
+.register-view .input-group .input-group-text {
+  background-color: #f1f3f5;
+}
+
+.register-view .form-label {
+  font-weight: 500;
+}
+
+/* Estilos para las noticias */
+.news-view {
+  min-height: 100vh;
+}
+
+/* Gradientes musicales */
+.gradient-music {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-rock {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+}
+
+.gradient-pop {
+  background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+}
+
+.gradient-jazz {
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+}
+
+.avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.news-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.news-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hero-section {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+@media (max-width: 768px) {
+  .hero-section .btn-lg {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-section .d-flex {
+    flex-direction: column;
+  }
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Estilos para la vista de detalle del álbum */
+.album-detail-view .card-img-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.album-detail-view .placeholder-image {
+  border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.album-detail-view .song-item {
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.album-detail-view .song-item:hover {
+  background-color: #f8f9fa;
+}
+
+.album-detail-view .play-btn {
+  transition: all 0.2s ease;
+}
+
+/* Imagenes que deben cubrir su contenedor (utilizado en MerchView) */
+.object-fit-cover {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block;
+}
+
+/* Asegurar que el contenedor ratio no muestre overflow inesperado */
+.merch-card .ratio {
+  overflow: hidden;
+}
